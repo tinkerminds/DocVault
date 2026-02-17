@@ -1,0 +1,66 @@
+# ============================
+# .NET
+# ============================
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.csproj.user
+project.lock.json
+/packages/
+*.nupkg
+
+# ============================
+# Node / Angular
+# ============================
+node_modules/
+dist/
+.angular/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================
+# Environment & Secrets
+# ============================
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+local.settings.json
+*.pfx
+*.key
+*.pem
+*.p12
+
+# ============================
+# IDE / Editor
+# ============================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================
+# OS
+# ============================
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ============================
+# Misc
+# ============================
+*.log
+*.tmp
+coverage/
+.nyc_output/
