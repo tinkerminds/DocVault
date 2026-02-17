@@ -1,0 +1,48 @@
+{
+    "rules": [
+        {
+            "enabled": true,
+            "name": "move-to-cool",
+            "type": "Lifecycle",
+            "definition": {
+                "actions": {
+                    "baseBlob": {
+                        "tierToCool": {
+                            "daysAfterModificationGreaterThan": 30
+                        }
+                    }
+                },
+                "filters": {
+                    "blobTypes": [
+                        "blockBlob"
+                    ],
+                    "prefixMatch": [
+                        "uploads/"
+                    ]
+                }
+            }
+        },
+        {
+            "enabled": true,
+            "name": "move-to-archive",
+            "type": "Lifecycle",
+            "definition": {
+                "actions": {
+                    "baseBlob": {
+                        "tierToArchive": {
+                            "daysAfterModificationGreaterThan": 180
+                        }
+                    }
+                },
+                "filters": {
+                    "blobTypes": [
+                        "blockBlob"
+                    ],
+                    "prefixMatch": [
+                        "uploads/"
+                    ]
+                }
+            }
+        }
+    ]
+}
