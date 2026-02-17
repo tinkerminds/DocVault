@@ -1,0 +1,187 @@
+<main class="upload-main">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumbs">
+    <a routerLink="/" class="breadcrumb-link">Home</a>
+    <span class="material-symbols-outlined breadcrumb-icon">chevron_right</span>
+    <span class="breadcrumb-current">Upload Documents</span>
+  </div>
+
+  <div class="upload-grid">
+    <!-- Left Column: Upload Zone -->
+    <div class="upload-left">
+      <!-- Header -->
+      <div class="upload-header">
+        <h1 class="upload-title">Upload New Files</h1>
+        <p class="upload-subtitle">Securely upload your documents to the vault.</p>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div class="drag-drop-zone">
+        <div class="drag-drop-content">
+          <div class="upload-icon-wrapper">
+            <span class="material-symbols-outlined upload-icon">cloud_upload</span>
+          </div>
+          <div class="drag-drop-text">
+            <p class="drag-drop-main">Drag &amp; drop files here</p>
+            <p class="drag-drop-sub">or click to browse from your computer</p>
+          </div>
+          <button class="btn-browse" type="button">Browse Files</button>
+          <p class="file-support-text">Supports: PDF, DOCX, XLSX, JPG (Max 25MB)</p>
+          <input 
+            type="file" 
+            multiple 
+            class="file-input-hidden" 
+            (change)="onFileSelected($event)"
+            accept=".pdf,.docx,.doc,.xlsx,.xls,.jpg,.jpeg,.png,.gif"
+          />
+        </div>
+      </div>
+
+      <!-- Upload Progress / File List -->
+      <div class="pending-uploads-container" *ngIf="uploadedFiles.length > 0">
+        <div class="pending-uploads-header">
+          <h3 class="pending-title">
+            <span class="material-symbols-outlined pending-icon">pending_actions</span>
+            Pending Uploads
+            <span class="pending-count">({{ uploadedFiles.length }} files)</span>
+          </h3>
+          <button type="button" class="btn-clear-all" (click)="clearAllFiles()">Clear All</button>
+        </div>
+
+        <div class="files-list">
+          <div *ngFor="let file of uploadedFiles" class="file-item">
+            <div class="file-icon" [style.backgroundColor]="file.bgColor" [style.color]="file.iconColor">
+              <span class="material-symbols-outlined">{{ file.icon }}</span>
+            </div>
+            <div class="file-info">
+              <div class="file-header">
+                <p class="file-name">{{ file.name }}</p>
+                <span class="file-progress-text" *ngIf="file.status === 'uploading'">{{ file.progress }}%</span>
+                <span class="file-size" *ngIf="file.status === 'ready'">{{ file.size.toFixed(1) }} MB</span>
+              </div>
+              <div class="progress-bar-wrapper" *ngIf="file.status === 'uploading'">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="file.progress"></div>
+                </div>
+                <div class="file-meta">
+                  <span class="file-loaded">{{ (file.size * file.progress / 100).toFixed(1) }} MB of {{ file.size.toFixed(1) }} MB</span>
+                  <span class="file-time">~4 secs left</span>
+                </div>
+              </div>
+              <p class="file-status" *ngIf="file.status === 'ready'">Ready to upload</p>
+            </div>
+            <button 
+              type="button" 
+              class="btn-remove" 
+              (click)="removeFile(file.id)"
+              [ngClass]="{'btn-remove-uploading': file.status === 'uploading'}"
+            >
+              <span class="material-symbols-outlined">
+                {{ file.status === 'uploading' ? 'close' : 'delete' }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: File Details & Actions -->
+    <div class="upload-right">
+      <div class="file-details-panel">
+        <h2 class="details-title">
+          <span class="material-symbols-outlined details-icon">tune</span>
+          File Details
+        </h2>
+
+        <form [formGroup]="fileForm" class="details-form">
+          <!-- Tags Input -->
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <div class="tags-input-wrapper">
+              <span class="material-symbols-outlined tags-input-icon">label</span>
+              <input 
+                type="text"
+                class="tags-input"
+                placeholder="e.g. Finance, Public, 2024"
+                (keydown.enter)="addTag($event)"
+              />
+            </div>
+            <div class="tags-list">
+              <span *ngFor="let tag of tags" class="tag-badge">
+                {{ tag }}
+                <button type="button" class="tag-close" (click)="removeTag(tag)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea
+              id="description"
+              formControlName="description"
+              class="form-textarea"
+              placeholder="Add a brief description about these files..."
+              rows="4"
+            ></textarea>
+          </div>
+
+          <!-- Destination Folder -->
+          <div class="form-group">
+            <label class="form-label" for="destination">Destination</label>
+            <div class="select-wrapper">
+              <select
+                id="destination"
+                formControlName="destination"
+                class="form-select"
+              >
+                <option value="Main Vault">Main Vault</option>
+                <option value="Projects / Alpha">Projects / Alpha</option>
+                <option value="Financials">Financials</option>
+              </select>
+              <span class="material-symbols-outlined select-icon">expand_more</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="btn-upload-files"
+              (click)="uploadAllFiles()"
+              [disabled]="uploadedFiles.length === 0"
+            >
+              <span class="material-symbols-outlined">upload</span>
+              Upload All Files
+            </button>
+            <button 
+              type="button" 
+              class="btn-cancel"
+              (click)="cancelUpload()"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Success Notification Toast -->
+<div class="toast-notification" *ngIf="showSuccessNotification">
+  <div class="toast-content">
+    <div class="toast-icon-wrapper">
+      <span class="material-symbols-outlined toast-icon-success">check_circle</span>
+    </div>
+    <div class="toast-text">
+      <h3 class="toast-title">Upload Successful</h3>
+      <p class="toast-message">Project_Alpha_Specs_v2.pdf has been added to your vault.</p>
+    </div>
+    <button type="button" class="toast-close" (click)="closeNotification()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+</div>
