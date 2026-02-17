@@ -1,13 +1,13 @@
 # Documentation
 
-Architecture documents, ADRs, onboarding guides, and planning references for DocVault.
+Architecture documents, data models, scaffolding plans, and team rules for DocVault.
 
 ## Contents
 
-| Document                                                  | Description                                            |
-| --------------------------------------------------------- | ------------------------------------------------------ |
-| [CI Pipeline Plan](./ci-pipeline-plan.md)                 | Conceptual design for the GitHub Actions CI pipeline   |
-| [Angular Scaffolding Plan](./angular-scaffolding-plan.md) | Frontend initialization and folder structure           |
-| [.NET Scaffolding Plan](./dotnet-scaffolding-plan.md)     | Backend initialization and folder structure            |
-| [Cosmos DB Data Model](./cosmos-data-model.md)            | Document metadata schema for the `documents` container |
-| [Team Rules](./team-rules.md)                             | Day 1 workflow and branching rules                     |
+| Document                                                  | Description                                                    |
+| --------------------------------------------------------- | -------------------------------------------------------------- |
+| [Angular Scaffolding Plan](./angular-scaffolding-plan.md) | Frontend initialization, folder structure, routing, components |
+| [.NET Scaffolding Plan](./dotnet-scaffolding-plan.md)     | Backend initialization, API endpoints, NuGet packages          |
+| [Cosmos DB Data Model](./cosmos-data-model.md)            | Document metadata schema, field definitions, status lifecycle  |
+| [CI/CD Pipeline Plan](./ci-pipeline-plan.md)              | CI (`ci.yml`) + CD (`deploy.yml`) pipeline design              |
+| [Team Rules](./team-rules.md)                             | Branching, PR reviews, commit conventions, security checklist  |
