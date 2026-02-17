@@ -1,6 +1,28 @@
-@DocVault.Api_HostAddress = http://localhost:5115
+@baseUrl = http://localhost:5115
 
-GET {{DocVault.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health Check
+GET {{baseUrl}}/api/health
 
-###
+### Upload a Document
+POST {{baseUrl}}/api/documents
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+Hello DocVault!
+--boundary
+Content-Disposition: form-data; name="tags"
+
+azure,demo
+--boundary--
+
+### List All Documents
+GET {{baseUrl}}/api/documents
+
+### Get Document By ID (replace with actual id)
+GET {{baseUrl}}/api/documents/REPLACE_WITH_ID
+
+### Delete Document (replace with actual id)
+DELETE {{baseUrl}}/api/documents/REPLACE_WITH_ID
