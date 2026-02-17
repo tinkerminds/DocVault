@@ -1,0 +1,221 @@
+@use '../../_variables' as *;
+
+.hero {
+  position: relative;
+  width: 100%;
+  padding: 1.5rem 1rem 2rem;
+  border-radius: $radius-lg;
+  background-color: rgba($primary, 0.05);
+  overflow: hidden;
+
+  @media (min-width: 768px) {
+    padding: 2rem 2.5rem 3rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 3rem 2.5rem 3rem;
+  }
+
+  .hero-background {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background-image: radial-gradient(#135bec 1px, transparent 1px);
+    background-size: 32px 32px;
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    min-height: 480px;
+    padding: 0 1rem;
+    text-align: center;
+
+    @media (min-width: 768px) {
+      padding: 0 2.5rem;
+    }
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 800px;
+
+    .hero-badge {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 auto;
+      padding: 0.25rem 0.75rem;
+      border-radius: $radius-full;
+      background-color: rgba($primary, 0.1);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: $primary;
+    }
+
+    .hero-title {
+      color: $text-primary;
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.033em;
+
+      @media (min-width: 768px) {
+        font-size: 3rem;
+      }
+
+      @media (min-width: 1024px) {
+        font-size: 3.75rem;
+      }
+
+      .text-primary {
+        color: $primary;
+      }
+    }
+
+    .hero-description {
+      margin: 0 auto;
+      max-width: 600px;
+      color: $text-secondary;
+      font-size: 1.125rem;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+  }
+
+  .hero-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 3rem;
+      min-width: 160px;
+      padding: 0 1.5rem;
+      background-color: $primary;
+      color: white;
+      border: none;
+      border-radius: $radius-lg;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.015em;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba($primary, 0.25);
+      transition: all 0.3s ease;
+
+      .material-symbols-outlined {
+        font-size: 20px;
+      }
+
+      &:hover {
+        background-color: $primary-dark;
+        box-shadow: 0 12px 24px rgba($primary, 0.35);
+        transform: translateY(-2px);
+      }
+    }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 3rem;
+      min-width: 160px;
+      padding: 0 1.5rem;
+      background-color: white;
+      color: $text-primary;
+      border: 1px solid $border-light;
+      border-radius: $radius-lg;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.015em;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+
+      .material-symbols-outlined {
+        font-size: 20px;
+      }
+
+      &:hover {
+        background-color: $background-light;
+        border-color: rgba($primary, 0.3);
+      }
+    }
+  }
+
+  .hero-formats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    .formats-icons {
+      display: flex;
+      gap: 1rem;
+      margin: 0 -1rem;
+
+      .format-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: $radius-full;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        .material-symbols-outlined {
+          font-size: 20px;
+        }
+
+        &.pdf {
+          background-color: rgb(219, 234, 254);
+          color: rgb(37, 99, 235);
+        }
+
+        &.sheets {
+          background-color: rgb(220, 252, 231);
+          color: rgb(34, 197, 94);
+        }
+
+        &.image {
+          background-color: rgb(254, 243, 199);
+          color: rgb(217, 119, 6);
+        }
+
+        &.code {
+          background-color: rgb(243, 232, 255);
+          color: rgb(147, 51, 234);
+        }
+      }
+    }
+
+    .formats-text {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: $text-secondary;
+    }
+  }
+}
