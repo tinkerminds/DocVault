@@ -1,0 +1,119 @@
+@use '../../_variables' as *;
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid $border-light;
+  background-color: $surface-light;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    padding: 2.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 2.5rem 10rem;
+  }
+
+  .footer-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
+
+    .footer-branding {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .footer-logo {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: $primary;
+
+        .material-symbols-outlined {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+
+      .footer-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: $text-primary;
+      }
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+
+      @media (min-width: 768px) {
+        justify-content: flex-end;
+      }
+
+      .footer-link {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: $text-secondary;
+        text-decoration: none;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: $primary;
+        }
+      }
+    }
+  }
+
+  .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid $border-light;
+    padding-top: 2rem;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
+
+    .footer-copyright {
+      font-size: 0.875rem;
+      color: $text-secondary;
+      margin: 0;
+    }
+
+    .footer-icons {
+      display: flex;
+      gap: 1rem;
+
+      .footer-icon-link {
+        color: $text-secondary;
+        text-decoration: none;
+        transition: color 0.3s ease;
+
+        .material-symbols-outlined {
+          display: block;
+        }
+
+        &:hover {
+          color: $primary;
+        }
+      }
+    }
+  }
+}
