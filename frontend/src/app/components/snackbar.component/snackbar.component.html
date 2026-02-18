@@ -1,0 +1,11 @@
+<div class="snackbar-container">
+    <div *ngFor="let snack of snackbars; trackBy: trackById" class="snackbar" [class.visible]="snack.visible"
+        [class.success]="snack.type === 'success'" [class.error]="snack.type === 'error'"
+        [class.info]="snack.type === 'info'">
+        <span class="material-symbols-outlined snack-icon">{{ getIcon(snack.type) }}</span>
+        <span class="snack-message">{{ snack.message }}</span>
+        <button class="snack-close" (click)="dismiss(snack.id)" aria-label="Dismiss">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+</div>

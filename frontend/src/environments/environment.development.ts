@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  // apiBaseUrl: 'http://localhost:5115/api',
   apiBaseUrl: 'https://docvault-api-dev.azurewebsites.net/api',
   msalConfig: {
     clientId: '5cd72392-169b-4008-ace2-4a7b4d708a25',

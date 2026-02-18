@@ -30,7 +30,7 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
   constructor(
     private documentService: DocumentService,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadDocuments();
