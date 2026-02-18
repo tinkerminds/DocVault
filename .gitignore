@@ -64,4 +64,3 @@ $RECYCLE.BIN/
 *.tmp
 coverage/
 .nyc_output/
-azurite-data/
