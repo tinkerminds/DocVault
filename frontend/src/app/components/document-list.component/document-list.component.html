@@ -1,0 +1,51 @@
+<div class="document-list">
+  <div class="document-list-header">
+    <h3 class="list-title">Recent Documents</h3>
+    <a routerLink="/documents" class="view-all-link">View All</a>
+  </div>
+
+  <div class="table-container">
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading-state">
+      <span class="material-symbols-outlined spin">progress_activity</span>
+      <span>Loading recent documents...</span>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
+      <span class="material-symbols-outlined">folder_open</span>
+      <span>No documents yet. <a routerLink="/upload">Upload one!</a></span>
+    </div>
+
+    <!-- Documents table -->
+    <table *ngIf="!isLoading && documents.length > 0" class="documents-table">
+      <thead>
+        <tr class="table-header">
+          <th>Name</th>
+          <th>Uploaded By</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of documents" class="table-row">
+          <td class="cell-name">
+            <div class="doc-info">
+              <div class="doc-icon" [style.backgroundColor]="doc.bgColor" [style.color]="doc.iconColor">
+                <span class="material-symbols-outlined">{{ doc.icon }}</span>
+              </div>
+              <span class="doc-name">{{ doc.name }}</span>
+            </div>
+          </td>
+          <td class="cell-uploaded-by">{{ doc.uploadedBy }}</td>
+          <td class="cell-date">{{ doc.date }}</td>
+          <td class="cell-action">
+            <button class="action-button">
+              <span class="material-symbols-outlined">more_vert</span>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
