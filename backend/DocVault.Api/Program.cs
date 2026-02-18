@@ -21,7 +21,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:4200",   // Angular dev server
-                "http://localhost:5173"    // Vite dev server (if used)
+                "http://localhost:5173",   // Vite dev server (if used)
+                "https://yellow-river-03038cf00.4.azurestaticapps.net"  // Azure Static Web App
             )
             .AllowAnyHeader()
             .AllowAnyMethod();

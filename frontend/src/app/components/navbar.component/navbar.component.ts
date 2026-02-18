@@ -1,7 +1,9 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
+import { InteractionType } from '@azure/msal-browser';
 import { DocumentService } from '../../services/document.service';
 import { DocumentResponse } from '../../models/document.model';
 import { Subject } from 'rxjs';
@@ -20,6 +22,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
   allDocuments: DocumentResponse[] = [];
   filteredDocuments: DocumentResponse[] = [];
   isLoadingSearch = false;
+  isAuthenticated = false;
+  userName = '';
 
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
@@ -27,14 +31,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private documentService: DocumentService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private authService: MsalService,
+    @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration
   ) { }
 
   ngOnInit(): void {
-    // Load all documents once for search recommendations
-    this.loadDocumentsForSearch();
+    this.checkAuth();
 
-    // Debounce search input to avoid filtering on every keystroke
+    // Only load documents if authenticated
+    if (this.isAuthenticated) {
+      this.loadDocumentsForSearch();
+    }
+
     this.searchSubject
       .pipe(debounceTime(200), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe((query) => {
@@ -47,6 +56,22 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  login(): void {
+    if (this.msalGuardConfig.interactionType === InteractionType.Redirect) {
+      const authRequest = this.msalGuardConfig.authRequest;
+      const scopes = authRequest && typeof authRequest !== 'function'
+        ? authRequest.scopes ?? []
+        : [];
+      this.authService.loginRedirect({ scopes });
+    }
+  }
+
+  logout(): void {
+    this.authService.logoutRedirect({
+      postLogoutRedirectUri: '/',
+    });
+  }
+
   navigateToHome(): void {
     this.router.navigate(['/']);
   }
@@ -56,7 +81,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (this.isSearchOpen) {
       this.searchQuery = '';
       this.filteredDocuments = this.allDocuments.slice(0, 5);
-      // Focus the input after the DOM updates
       setTimeout(() => {
         const input = this.elementRef.nativeElement.querySelector('.search-overlay-input');
         if (input) input.focus();
@@ -98,7 +122,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
-  // Close search overlay when clicking outside the navbar
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (this.isSearchOpen && !this.elementRef.nativeElement.contains(event.target)) {
@@ -106,11 +129,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Close search on Escape key
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     if (this.isSearchOpen) {
       this.closeSearch();
+    }
+  }
+
+  private checkAuth(): void {
+    const accounts = this.authService.instance.getAllAccounts();
+    this.isAuthenticated = accounts.length > 0;
+    if (this.isAuthenticated) {
+      const account = accounts[0];
+      this.userName = account.name || account.username || '';
     }
   }
 

@@ -15,32 +15,38 @@
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
           class="nav-link"
-        >Home</a>
-        <a
-          routerLink="/documents"
-          routerLinkActive="active"
-          class="nav-link"
-        >Documents</a>
-        <button
-          class="nav-link search-btn"
-          [class.active]="isSearchOpen"
-          (click)="toggleSearch()"
-        >Search</button>
+          >Home</a
+        >
+        <a routerLink="/documents" routerLinkActive="active" class="nav-link">Documents</a>
+        <button class="nav-link search-btn" [class.active]="isSearchOpen" (click)="toggleSearch()">
+          Search
+        </button>
       </nav>
 
       <div class="navbar-actions">
-        <button class="btn-upload" routerLink="/upload">
-          <span class="text">Upload</span>
-        </button>
-        <button class="btn-icon">
-          <span class="material-symbols-outlined">notifications</span>
-        </button>
-        <div class="avatar">
-          <img
-            alt="User profile avatar"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJc1Ae0l2Abx4peDY19iLv5J5usfNTUG3Pm9lqChJ_1lINWA66EiC7UExg9M-BmsnJu-RkP1QYg6j_m44N86mHvTbsaVw8-1Q-Z_aWSRQvbvD-oqgPGkCGkdHzJwLwg1vHEl5_xVmaqQ2XTAGpgYqaflP8Swb2x72dZLKvhmKap9WLcO06d1yEfMQWItHRdVet7H5pif67E941CKx3rRw-kJQlLTURicwCHrGKvTgehBiyquBupo4CC4-7xtTIqGa6rUEk1rgWQb6r"
-          />
-        </div>
+        <!-- Show when authenticated -->
+        <ng-container *ngIf="isAuthenticated">
+          <button class="btn-upload" routerLink="/upload">
+            <span class="text">Upload</span>
+          </button>
+          <button class="btn-icon">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <div class="user-info" (click)="logout()" title="Click to logout">
+            <div class="avatar">
+              <span class="material-symbols-outlined">account_circle</span>
+            </div>
+            <span class="user-name">{{ userName }}</span>
+          </div>
+        </ng-container>
+
+        <!-- Show when NOT authenticated -->
+        <ng-container *ngIf="!isAuthenticated">
+          <button class="btn-login" (click)="login()">
+            <span class="material-symbols-outlined">login</span>
+            <span class="text">Sign In</span>
+          </button>
+        </ng-container>
       </div>
     </div>
   </div>
@@ -70,20 +76,32 @@
           <span>Loading...</span>
         </div>
 
-        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && searchQuery.trim()" class="search-state">
+        <div
+          *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && searchQuery.trim()"
+          class="search-state"
+        >
           <span class="material-symbols-outlined">search_off</span>
           <span>No documents found for "{{ searchQuery }}"</span>
         </div>
 
-        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && !searchQuery.trim()" class="search-state">
+        <div
+          *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && !searchQuery.trim()"
+          class="search-state"
+        >
           <span class="material-symbols-outlined">folder_open</span>
           <span>No documents available</span>
         </div>
 
-        <div *ngIf="!searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
+        <div
+          *ngIf="!searchQuery.trim() && filteredDocuments.length > 0"
+          class="search-section-label"
+        >
           Recent Documents
         </div>
-        <div *ngIf="searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
+        <div
+          *ngIf="searchQuery.trim() && filteredDocuments.length > 0"
+          class="search-section-label"
+        >
           Results for "{{ searchQuery }}"
         </div>
 
