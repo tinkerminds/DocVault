@@ -1,8 +1,11 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsStorage": "<your-blob-storage-connection-string>",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "BlobStorage": "<your-blob-storage-connection-string>"
+    "BlobStorage": "<your-blob-storage-connection-string>",
+    "CosmosDb": "<your-cosmos-db-connection-string>",
+    "CosmosDb__DatabaseName": "docvault-db",
+    "CosmosDb__ContainerName": "documents"
   }
 }
