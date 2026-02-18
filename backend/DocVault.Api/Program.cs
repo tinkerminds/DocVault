@@ -4,6 +4,11 @@ using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load additional configuration (e.g., local dev connection strings)
+builder.Configuration
+    .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("../appsettings.development.json", optional: true, reloadOnChange: true);
+
 // ---------- Services ----------
 
 builder.Services.AddControllers();
