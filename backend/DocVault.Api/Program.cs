@@ -1,6 +1,7 @@
 using DocVault.Api.Services;
 using Microsoft.Azure.Cosmos;
 using Azure.Storage.Blobs;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Microsoft Entra ID (Azure AD) JWT Bearer authentication
+builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 
 // CORS — allow Angular dev server
 builder.Services.AddCors(options =>
@@ -64,6 +68,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

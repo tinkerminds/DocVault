@@ -1,9 +1,12 @@
+using System.Security.Claims;
 using DocVault.Api.Models;
 using DocVault.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DocVault.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class DocumentsController : ControllerBase
@@ -32,8 +35,7 @@ public class DocumentsController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("No file provided.");
 
-        // TODO: Replace with authenticated user ID from Entra ID (Day 2)
-        var userId = "demo-user";
+        var userId = GetUserId();
 
         using var stream = file.OpenReadStream();
         var blobUrl = await _blobService.UploadAsync(stream, file.FileName, file.ContentType, userId);
@@ -67,8 +69,7 @@ public class DocumentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DocumentUploadResponse>>> GetAll()
     {
-        // TODO: Replace with authenticated user ID from Entra ID (Day 2)
-        var userId = "demo-user";
+        var userId = GetUserId();
 
         var documents = await _cosmosService.GetDocumentsAsync(userId);
         var response = documents.Select(MapToResponse);
@@ -83,8 +84,7 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<DocumentUploadResponse>> GetById(string id)
     {
-        // TODO: Replace with authenticated user ID from Entra ID (Day 2)
-        var userId = "demo-user";
+        var userId = GetUserId();
 
         var document = await _cosmosService.GetDocumentAsync(id, userId);
 
@@ -103,8 +103,7 @@ public class DocumentsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        // TODO: Replace with authenticated user ID from Entra ID (Day 2)
-        var userId = "demo-user";
+        var userId = GetUserId();
 
         var document = await _cosmosService.GetDocumentAsync(id, userId);
 
@@ -116,6 +115,16 @@ public class DocumentsController : ControllerBase
         _logger.LogInformation("Document {DocumentId} soft-deleted by user {UserId}", id, userId);
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Extract the authenticated user's Object ID (oid) from the JWT token.
+    /// </summary>
+    private string GetUserId()
+    {
+        return User.FindFirstValue("http://schemas.microsoft.com/identity/claims/objectidentifier")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new UnauthorizedAccessException("User ID claim not found in token.");
     }
 
     private DocumentUploadResponse MapToResponse(DocumentMetadata doc)
