@@ -197,4 +197,127 @@ userId/documentId/filename
 - [x] Verified resources in Azure Portal
 - [x] Documented today's work
 
+---
 
+# Day 2 — Security, Identity & Serverless
+
+**Date**: February 18, 2026
+**Team Member**: Ashish Tikhile
+**Task**: Key Vault Setup + Managed Identity
+**Branch**: `feature/keyvault`
+
+---
+
+## Task 1: Create Key Vault (Azure Portal)
+
+### Steps
+
+1. Go to **portal.azure.com** → search **"Key Vault"** in top search bar
+2. Click **"Create"**
+3. Fill in:
+   - **Resource Group**: `docvault-rg`
+   - **Key vault name**: `docvault-kv-dev`
+   - **Region**: Central India
+4. Click **"Review + Create"** → **"Create"**
+
+**What it does**: Creates a secure, centralized secret store in Azure. No more connection strings in code or config files.
+
+---
+
+## Task 2: Add Secrets to Key Vault (Azure Portal)
+
+### Steps
+
+1. Open your Key Vault → click **"Secrets"** in left menu
+2. Click **"+ Generate/Import"**
+3. Add **Cosmos DB** secret:
+   - **Name**: `ConnectionStrings--CosmosDb`
+   - **Value**: your Cosmos DB connection string
+   - Click **"Create"**
+4. Add **Blob Storage** secret:
+   - **Name**: `ConnectionStrings--BlobStorage`
+   - **Value**: your Blob Storage connection string
+   - Click **"Create"**
+
+> **Why double dash `--`?** Azure Key Vault uses `--` instead of `:` to represent nested config keys. So `ConnectionStrings--CosmosDb` maps to `ConnectionStrings:CosmosDb` in .NET config.
+
+**What it does**: Moves all sensitive connection strings out of `appsettings.json` into Key Vault. Secrets are encrypted at rest and access-controlled.
+
+---
+
+## Task 3: Enable System-Assigned Managed Identity on App Service
+
+### Steps
+
+1. Go to **App Services** → open your app
+2. In left menu → scroll down → click **"Identity"**
+3. Under **"System assigned"** tab → toggle **Status to "On"**
+4. Click **"Save"** → confirm **"Yes"**
+5. Copy the **Object (principal) ID** that appears — needed for next step
+
+**What it does**: Gives your App Service its own identity in Azure Active Directory — like a user account for your app. It can now authenticate to other Azure services without passwords.
+
+---
+
+## Task 4: Grant App Service Access to Key Vault
+
+### Steps
+
+1. Go to your **Key Vault** → click **"Access policies"** in left menu
+2. Click **"+ Create"**
+3. Under **Permissions**:
+   - Secret permissions → check **Get** and **List**
+   - Click **Next**
+4. Under **Principal** → paste the **Object ID** copied above → select your App Service → click **Next**
+5. Click **"Create"**
+
+**What it does**: Tells Key Vault "trust this App Service — allow it to read secrets." The App Service can now fetch connection strings automatically at runtime using its Managed Identity — no passwords needed anywhere.
+
+---
+
+## How It All Works Together
+
+```
+App Service (Managed Identity)
+        ↓  authenticates automatically
+   Azure Key Vault
+        ↓  returns secrets securely
+   CosmosDb connection string
+   BlobStorage connection string
+        ↓
+   .NET API uses them at runtime
+```
+
+**No passwords in code. No secrets in Git. Fully secure.**
+
+---
+
+## Resources Created
+
+| Resource Type   | Name                  | Location      | Purpose                        |
+| --------------- | --------------------- | ------------- | ------------------------------ |
+| Key Vault       | `docvault-kv-dev`   | Central India | Secure secret storage          |
+| Secret          | `ConnectionStrings--CosmosDb`  | -  | Cosmos DB connection string    |
+| Secret          | `ConnectionStrings--BlobStorage` | -| Blob Storage connection string |
+| Managed Identity| System-assigned on App Service | - | Passwordless auth to Key Vault |
+
+---
+
+## Security Measures
+
+✅ **No secrets in code** — all connection strings in Key Vault
+✅ **No secrets in Git** — `local.settings.json` is gitignored
+✅ **Managed Identity** — App Service authenticates without passwords
+✅ **Least privilege** — only `Get` and `List` permissions granted
+
+---
+
+## Completion Checklist
+
+- [ ] Key Vault `docvault-kv-dev` created in Central India
+- [ ] Cosmos DB connection string added as secret
+- [ ] Blob Storage connection string added as secret
+- [ ] System-Assigned Managed Identity enabled on App Service
+- [ ] Key Vault access policy granted to App Service
+- [ ] Verified App Service can read secrets from Key Vault
+- [ ] Branch `feature/keyvault` pushed and PR opened
