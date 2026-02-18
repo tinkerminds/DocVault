@@ -1,6 +1,7 @@
 <header class="navbar">
   <div class="navbar-container">
-    <div class="navbar-logo">
+    <!-- Logo - clickable, routes to home -->
+    <div class="navbar-logo" (click)="navigateToHome()">
       <div class="logo-icon">
         <span class="material-symbols-outlined">folder_shared</span>
       </div>
@@ -9,10 +10,22 @@
 
     <div class="navbar-content">
       <nav class="navbar-nav">
-        <a routerLink="/" class="nav-link active">Home</a>
-        <a routerLink="/documents" class="nav-link">Documents</a>
-        <a routerLink="/upload" class="nav-link">Upload</a>
-        <a href="#" class="nav-link">Search</a>
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-link"
+        >Home</a>
+        <a
+          routerLink="/documents"
+          routerLinkActive="active"
+          class="nav-link"
+        >Documents</a>
+        <button
+          class="nav-link search-btn"
+          [class.active]="isSearchOpen"
+          (click)="toggleSearch()"
+        >Search</button>
       </nav>
 
       <div class="navbar-actions">
@@ -28,6 +41,66 @@
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJc1Ae0l2Abx4peDY19iLv5J5usfNTUG3Pm9lqChJ_1lINWA66EiC7UExg9M-BmsnJu-RkP1QYg6j_m44N86mHvTbsaVw8-1Q-Z_aWSRQvbvD-oqgPGkCGkdHzJwLwg1vHEl5_xVmaqQ2XTAGpgYqaflP8Swb2x72dZLKvhmKap9WLcO06d1yEfMQWItHRdVet7H5pif67E941CKx3rRw-kJQlLTURicwCHrGKvTgehBiyquBupo4CC4-7xtTIqGa6rUEk1rgWQb6r"
           />
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Overlay Dropdown -->
+  <div class="search-overlay" *ngIf="isSearchOpen">
+    <div class="search-overlay-inner">
+      <div class="search-input-wrapper">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input
+          class="search-overlay-input"
+          type="text"
+          placeholder="Search documents..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput(searchQuery)"
+          autocomplete="off"
+        />
+        <button class="search-close-btn" (click)="closeSearch()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div class="search-results">
+        <div *ngIf="isLoadingSearch" class="search-state">
+          <span class="material-symbols-outlined spin">progress_activity</span>
+          <span>Loading...</span>
+        </div>
+
+        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && searchQuery.trim()" class="search-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <span>No documents found for "{{ searchQuery }}"</span>
+        </div>
+
+        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && !searchQuery.trim()" class="search-state">
+          <span class="material-symbols-outlined">folder_open</span>
+          <span>No documents available</span>
+        </div>
+
+        <div *ngIf="!searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
+          Recent Documents
+        </div>
+        <div *ngIf="searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
+          Results for "{{ searchQuery }}"
+        </div>
+
+        <button
+          *ngFor="let doc of filteredDocuments"
+          class="search-result-item"
+          (click)="navigateToDocument(doc)"
+        >
+          <div class="result-icon">
+            <span class="material-symbols-outlined">{{ getFileIcon(doc.fileName) }}</span>
+          </div>
+          <div class="result-info">
+            <span class="result-name">{{ doc.fileName }}</span>
+            <span class="result-meta">{{ formatFileSize(doc.sizeBytes) }}</span>
+          </div>
+          <span class="material-symbols-outlined result-arrow">chevron_right</span>
+        </button>
       </div>
     </div>
   </div>

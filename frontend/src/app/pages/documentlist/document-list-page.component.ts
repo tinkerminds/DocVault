@@ -1,8 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentService } from '../../services/document.service';
 import { DocumentUI } from '../../models/document.model';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-document-list-page',
@@ -11,7 +13,7 @@ import { DocumentUI } from '../../models/document.model';
   templateUrl: './document-list-page.component.html',
   styleUrl: './document-list-page.component.scss',
 })
-export class DocumentListPageComponent implements OnInit {
+export class DocumentListPageComponent implements OnInit, OnDestroy {
   searchQuery: string = '';
   currentPage: number = 1;
   itemsPerPage: number = 5;
@@ -23,36 +25,61 @@ export class DocumentListPageComponent implements OnInit {
   paginatedDocuments: DocumentUI[] = [];
   isLoading: boolean = false;
   errorMessage: string = '';
+  private destroy$ = new Subject<void>();
 
   constructor(
     private documentService: DocumentService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.loadDocuments();
+    // Subscribe to real-time document upload events
+    this.documentService.documentUploaded$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.loadDocuments();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadDocuments(): void {
     this.isLoading = true;
     this.errorMessage = '';
+    console.log('Loading documents from API for document list page...');
 
     this.documentService.getDocuments().subscribe({
       next: (documents) => {
-        this.allDocuments = documents.map(doc => this.mapToUIDocument(doc));
-        this.totalResults = this.allDocuments.length;
+        console.log('Documents fetched from API:', documents);
+        if (documents && documents.length > 0) {
+          this.allDocuments = documents.map((doc) => this.mapToUIDocument(doc));
+          // Sort by date descending (most recent first)
+          this.allDocuments.sort((a, b) => {
+            const dateA = new Date(a.uploadDate).getTime();
+            const dateB = new Date(b.uploadDate).getTime();
+            return dateB - dateA;
+          });
+          this.totalResults = this.allDocuments.length;
+          console.log('Mapped UI documents:', this.allDocuments);
+        } else {
+          console.log('No documents from API');
+          this.allDocuments = [];
+          this.totalResults = 0;
+        }
         this.filterAndPaginate();
         this.isLoading = false;
-
-        // Manually trigger change detection
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading documents:', error);
         this.errorMessage = 'Failed to load documents. Please try again.';
+        this.allDocuments = [];
+        this.totalResults = 0;
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -71,7 +98,7 @@ export class DocumentListPageComponent implements OnInit {
       bgColor: colors.bg,
       iconColor: colors.icon,
       downloadUrl: doc.downloadUrl,
-      status: doc.status
+      status: doc.status,
     };
   }
 
@@ -135,7 +162,7 @@ export class DocumentListPageComponent implements OnInit {
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     };
     return date.toLocaleDateString('en-US', options);
   }
