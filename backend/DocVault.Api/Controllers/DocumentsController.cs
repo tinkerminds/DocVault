@@ -1,24 +1,32 @@
+using System.Net;
+using System.Security.Claims;
 using DocVault.Api.Models;
 using DocVault.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos;
 
 namespace DocVault.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class DocumentsController : ControllerBase
 {
     private readonly IBlobStorageService _blobService;
     private readonly ICosmosDbService _cosmosService;
+    private readonly IDocumentSearchService _searchService;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IBlobStorageService blobService,
         ICosmosDbService cosmosService,
+        IDocumentSearchService searchService,
         ILogger<DocumentsController> logger)
     {
         _blobService = blobService;
         _cosmosService = cosmosService;
+        _searchService = searchService;
         _logger = logger;
     }
 
@@ -58,6 +66,56 @@ public class DocumentsController : ControllerBase
         _logger.LogInformation("Document {DocumentId} uploaded by user {UserId}", created.Id, userId);
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);
+    }
+
+    /// <summary>
+    /// Full-text search across the current user's document excerpts.
+    /// GET /api/documents/search?q=term
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<DocumentSearchDto>>> Search([FromQuery] string? q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+        {
+            _logger.LogWarning("Search request rejected – query parameter 'q' is null or empty");
+            return BadRequest("Search query 'q' must not be empty.");
+        }
+
+        var userId = GetUserId();
+
+        _logger.LogInformation(
+            "Search request received. UserId={UserId}, TermLength={TermLength}",
+            userId, q.Length);
+
+        try
+        {
+            var results = await _searchService.SearchAsync(userId, q);
+            var resultList = results.ToList();
+
+            _logger.LogInformation(
+                "Search completed. UserId={UserId}, ResultCount={Count}",
+                userId, resultList.Count);
+
+            return Ok(resultList);
+        }
+        catch (CosmosException ex)
+        {
+            _logger.LogError(ex,
+                "Cosmos DB error during search. UserId={UserId}, StatusCode={StatusCode}",
+                userId, ex.StatusCode);
+            return StatusCode((int)HttpStatusCode.InternalServerError,
+                "An error occurred while searching documents. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Extract the authenticated user's Object ID (oid) from the JWT token.
+    /// </summary>
+    private string GetUserId()
+    {
+        return User.FindFirstValue("http://schemas.microsoft.com/identity/claims/objectidentifier")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new UnauthorizedAccessException("User ID claim not found in token.");
     }
 
     /// <summary>

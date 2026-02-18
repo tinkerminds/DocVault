@@ -39,6 +39,7 @@ builder.Services.AddSingleton<CosmosClient>(sp =>
     });
 });
 builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
+builder.Services.AddScoped<IDocumentSearchService, DocumentSearchService>();
 
 // Azure Blob Storage
 builder.Services.AddSingleton<BlobServiceClient>(sp =>
