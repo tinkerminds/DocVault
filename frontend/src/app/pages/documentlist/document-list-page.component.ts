@@ -1,18 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface Document {
-  id: string;
-  name: string;
-  category: string;
-  uploadedBy: string;
-  uploadDate: string;
-  size: string;
-  icon: string;
-  bgColor: string;
-  iconColor: string;
-}
+import { DocumentService } from '../../services/document.service';
+import { DocumentUI } from '../../models/document.model';
 
 @Component({
   selector: 'app-document-list-page',
@@ -27,73 +17,135 @@ export class DocumentListPageComponent implements OnInit {
   itemsPerPage: number = 5;
   sortBy: string = 'date';
 
-  documents: Document[] = [
-    {
-      id: '1',
-      name: 'Q3_Financial_Report.pdf',
-      category: 'Finance',
-      uploadedBy: 'Sarah',
-      uploadDate: 'Oct 24, 2023',
-      size: '2.4 MB',
-      icon: 'picture_as_pdf',
-      bgColor: 'rgb(254, 226, 226)',
-      iconColor: 'rgb(220, 38, 38)',
-    },
-    {
-      id: '2',
-      name: 'Employee_Handbook_v2.docx',
-      category: 'HR',
-      uploadedBy: 'John',
-      uploadDate: 'Sep 12, 2023',
-      size: '850 KB',
-      icon: 'description',
-      bgColor: 'rgb(219, 234, 254)',
-      iconColor: 'rgb(37, 99, 235)',
-    },
-    {
-      id: '3',
-      name: 'Project_Alpha_Specs.xlsx',
-      category: 'Engineering',
-      uploadedBy: 'Mike',
-      uploadDate: 'Aug 05, 2023',
-      size: '4.1 MB',
-      icon: 'table_view',
-      bgColor: 'rgb(220, 252, 231)',
-      iconColor: 'rgb(34, 197, 94)',
-    },
-    {
-      id: '4',
-      name: 'Marketing_Assets_2024.zip',
-      category: 'Marketing',
-      uploadedBy: 'Emma',
-      uploadDate: 'Jul 22, 2023',
-      size: '156 MB',
-      icon: 'folder_zip',
-      bgColor: 'rgb(254, 243, 199)',
-      iconColor: 'rgb(217, 119, 6)',
-    },
-    {
-      id: '5',
-      name: 'Client_Contract_Template.pdf',
-      category: 'Legal',
-      uploadedBy: 'David',
-      uploadDate: 'Jun 15, 2023',
-      size: '1.2 MB',
-      icon: 'picture_as_pdf',
-      bgColor: 'rgb(254, 226, 226)',
-      iconColor: 'rgb(220, 38, 38)',
-    },
-  ];
-
-  allDocuments: Document[] = [];
-  filteredDocuments: Document[] = [];
+  allDocuments: DocumentUI[] = [];
+  filteredDocuments: DocumentUI[] = [];
   totalResults: number = 0;
-  paginatedDocuments: Document[] = [];
+  paginatedDocuments: DocumentUI[] = [];
+  isLoading: boolean = false;
+  errorMessage: string = '';
+
+  constructor(
+    private documentService: DocumentService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
-    this.allDocuments = [...this.documents];
-    this.totalResults = this.allDocuments.length;
-    this.filterAndPaginate();
+    this.loadDocuments();
+  }
+
+  loadDocuments(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.documentService.getDocuments().subscribe({
+      next: (documents) => {
+        this.allDocuments = documents.map(doc => this.mapToUIDocument(doc));
+        this.totalResults = this.allDocuments.length;
+        this.filterAndPaginate();
+        this.isLoading = false;
+
+        // Manually trigger change detection
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading documents:', error);
+        this.errorMessage = 'Failed to load documents. Please try again.';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private mapToUIDocument(doc: any): DocumentUI {
+    const fileExt = doc.fileName.split('.').pop()?.toLowerCase() || '';
+    const colors = this.getFileColor(fileExt);
+
+    return {
+      id: doc.id,
+      name: doc.fileName,
+      category: this.getCategoryFromContentType(doc.contentType),
+      uploadedBy: 'User', // Placeholder - backend doesn't provide this
+      uploadDate: this.formatDate(doc.uploadedAt),
+      size: this.formatFileSize(doc.sizeBytes),
+      icon: this.getFileIcon(fileExt),
+      bgColor: colors.bg,
+      iconColor: colors.icon,
+      downloadUrl: doc.downloadUrl,
+      status: doc.status
+    };
+  }
+
+  private getFileIcon(ext: string): string {
+    switch (ext) {
+      case 'pdf':
+        return 'picture_as_pdf';
+      case 'docx':
+      case 'doc':
+        return 'description';
+      case 'xlsx':
+      case 'xls':
+        return 'table_view';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return 'image';
+      case 'zip':
+      case 'rar':
+        return 'folder_zip';
+      default:
+        return 'insert_drive_file';
+    }
+  }
+
+  private getFileColor(ext: string): { bg: string; icon: string } {
+    switch (ext) {
+      case 'pdf':
+        return { bg: 'rgb(254, 226, 226)', icon: 'rgb(220, 38, 38)' };
+      case 'docx':
+      case 'doc':
+        return { bg: 'rgb(219, 234, 254)', icon: 'rgb(37, 99, 235)' };
+      case 'xlsx':
+      case 'xls':
+        return { bg: 'rgb(220, 252, 231)', icon: 'rgb(34, 197, 94)' };
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return { bg: 'rgb(254, 243, 199)', icon: 'rgb(217, 119, 6)' };
+      case 'zip':
+      case 'rar':
+        return { bg: 'rgb(254, 243, 199)', icon: 'rgb(217, 119, 6)' };
+      default:
+        return { bg: 'rgb(243, 244, 246)', icon: 'rgb(107, 114, 128)' };
+    }
+  }
+
+  private getCategoryFromContentType(contentType: string): string {
+    if (contentType.includes('pdf')) return 'Document';
+    if (contentType.includes('word') || contentType.includes('document')) return 'Document';
+    if (contentType.includes('spreadsheet') || contentType.includes('excel')) return 'Spreadsheet';
+    if (contentType.includes('image')) return 'Image';
+    if (contentType.includes('zip') || contentType.includes('compressed')) return 'Archive';
+    return 'File';
+  }
+
+  private formatDate(isoDate: string): string {
+    const date = new Date(isoDate);
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    };
+    return date.toLocaleDateString('en-US', options);
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
   onSearchChange(): void {
@@ -152,15 +204,24 @@ export class DocumentListPageComponent implements OnInit {
     return Math.min(this.currentPage * this.itemsPerPage, this.totalResults);
   }
 
-  downloadDocument(doc: Document): void {
-    console.log('Downloading:', doc.name);
+  downloadDocument(doc: DocumentUI): void {
+    if (doc.downloadUrl) {
+      window.open(doc.downloadUrl, '_blank');
+    } else {
+      console.error('Download URL not available for:', doc.name);
+    }
   }
 
-  viewDocument(doc: Document): void {
-    console.log('Viewing:', doc.name);
+  viewDocument(doc: DocumentUI): void {
+    // Open document in new tab using download URL
+    if (doc.downloadUrl) {
+      window.open(doc.downloadUrl, '_blank');
+    } else {
+      console.error('View URL not available for:', doc.name);
+    }
   }
 
-  moreActions(doc: Document): void {
+  moreActions(doc: DocumentUI): void {
     console.log('More actions for:', doc.name);
   }
 }

@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { DocumentService } from '../../services/document.service';
 
 interface UploadFile {
   id: string;
@@ -12,6 +13,7 @@ interface UploadFile {
   icon: string;
   bgColor: string;
   iconColor: string;
+  file: File; // Store actual File object
 }
 
 @Component({
@@ -23,36 +25,18 @@ interface UploadFile {
 })
 export class UploadPageComponent {
   fileForm: FormGroup;
-  uploadedFiles: UploadFile[] = [
-    {
-      id: '1',
-      name: 'Project_Alpha_Specs_v2.pdf',
-      size: 4.1,
-      progress: 65,
-      status: 'uploading',
-      icon: 'picture_as_pdf',
-      bgColor: 'rgb(254, 226, 226)',
-      iconColor: 'rgb(220, 38, 38)',
-    },
-    {
-      id: '2',
-      name: 'Quarterly_Financials_Q3.docx',
-      size: 1.8,
-      progress: 0,
-      status: 'ready',
-      icon: 'description',
-      bgColor: 'rgb(219, 234, 254)',
-      iconColor: 'rgb(37, 99, 235)',
-    },
-  ];
+  uploadedFiles: UploadFile[] = [];
+  tags: string[] = [];
+  showSuccessNotification = false;
 
-  tags: string[] = ['Finance', 'Internal'];
-  showSuccessNotification = true;
-
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private documentService: DocumentService,
+    private router: Router
+  ) {
     this.fileForm = this.fb.group({
       tags: [''],
-      description: ['', Validators.required],
+      description: [''],
       destination: ['Main Vault', Validators.required],
     });
   }
@@ -60,15 +44,15 @@ export class UploadPageComponent {
   onFileSelected(event: any): void {
     const files: FileList = event.target.files;
     if (files) {
-      for (let file of files) {
-        this.addFile(file);
+      for (let i = 0; i < files.length; i++) {
+        this.addFile(files[i]);
       }
     }
   }
 
   addFile(file: File): void {
     const newFile: UploadFile = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random(),
       name: file.name,
       size: file.size / (1024 * 1024),
       progress: 0,
@@ -76,6 +60,7 @@ export class UploadPageComponent {
       icon: this.getFileIcon(file.name),
       bgColor: this.getFileColor(file.name).bg,
       iconColor: this.getFileColor(file.name).icon,
+      file: file // Store the actual File object
     };
     this.uploadedFiles.push(newFile);
   }
@@ -104,30 +89,42 @@ export class UploadPageComponent {
 
   uploadAllFiles(): void {
     if (this.fileForm.valid && this.uploadedFiles.length > 0) {
-      console.log('Uploading files with form data:', this.fileForm.value);
-      console.log('Tags:', this.tags);
-      this.simulateUpload();
-    }
-  }
+      const tagsString = this.tags.join(',');
+      let completedCount = 0;
+      const totalFiles = this.uploadedFiles.filter(f => f.status === 'ready').length;
 
-  simulateUpload(): void {
-    this.uploadedFiles.forEach((file, index) => {
-      if (file.status === 'ready') {
-        file.status = 'uploading';
-        let progress = 0;
-        const interval = setInterval(() => {
-          progress += Math.random() * 30;
-          if (progress >= 100) {
-            progress = 100;
-            file.progress = progress;
-            file.status = 'completed';
-            clearInterval(interval);
-          } else {
-            file.progress = Math.round(progress);
-          }
-        }, 500);
-      }
-    });
+      this.uploadedFiles.forEach(fileWrapper => {
+        if (fileWrapper.status === 'ready') {
+          fileWrapper.status = 'uploading';
+          fileWrapper.progress = 0;
+
+          this.documentService.uploadDocument(fileWrapper.file, tagsString)
+            .subscribe({
+              next: (response) => {
+                fileWrapper.status = 'completed';
+                fileWrapper.progress = 100;
+                completedCount++;
+
+                // Show success notification when all uploads complete
+                if (completedCount === totalFiles) {
+                  this.showSuccessNotification = true;
+
+                  // Navigate to documents page after 2 seconds
+                  setTimeout(() => {
+                    this.router.navigate(['/documents']);
+                  }, 2000);
+                }
+              },
+              error: (err) => {
+                fileWrapper.status = 'failed';
+                fileWrapper.progress = 0;
+                console.error('Upload failed for', fileWrapper.name, ':', err);
+                completedCount++;
+              }
+            });
+        }
+      });
+    }
   }
 
   cancelUpload(): void {
