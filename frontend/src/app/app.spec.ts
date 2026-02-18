@@ -1,11 +1,29 @@
 import { TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { of, Subject } from 'rxjs';
 import { App } from './app';
+import { DocumentService } from './services/document.service';
+
+// Mock DocumentService so no real HTTP calls are made during tests
+const mockDocumentService = {
+  getDocuments: () => of([]),
+  uploadDocument: () => of({}),
+  deleteDocument: () => of(void 0),
+  documentUploaded$: new Subject<void>().asObservable(),
+};
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, RouterTestingModule],
+      imports: [App],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: DocumentService, useValue: mockDocumentService },
+      ],
     }).compileComponents();
   });
 
@@ -15,10 +33,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render navbar', async () => {
+  it('should render navbar', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('nav')).toBeTruthy();
+    expect(compiled.querySelector('app-navbar')).toBeTruthy();
   });
 });
