@@ -50,10 +50,12 @@ export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
 
   // Protect all calls to our backend API
-  protectedResourceMap.set(environment.apiBaseUrl + '/*', environment.msalConfig.scopes);
+  // MSAL matches by URL prefix — do NOT use '/*' wildcard, it breaks matching
+  protectedResourceMap.set(environment.apiBaseUrl, environment.msalConfig.scopes);
 
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap,
   };
 }
+

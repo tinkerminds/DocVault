@@ -1,13 +1,27 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef, Inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  HostListener,
+  ElementRef,
+  Inject,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
-import { InteractionType } from '@azure/msal-browser';
+import {
+  MsalService,
+  MsalBroadcastService,
+  MSAL_GUARD_CONFIG,
+  MsalGuardConfiguration,
+} from '@azure/msal-angular';
+import { InteractionStatus, InteractionType } from '@azure/msal-browser';
 import { DocumentService } from '../../services/document.service';
 import { DocumentResponse } from '../../models/document.model';
+import { SnackbarService } from '../../services/snackbar.service';
 import { Subject } from 'rxjs';
-import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntil, debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -33,17 +47,30 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private documentService: DocumentService,
     private elementRef: ElementRef,
     private authService: MsalService,
-    @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration
+    private msalBroadcastService: MsalBroadcastService,
+    private cdr: ChangeDetectorRef,
+    private snackbar: SnackbarService,
+    @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration,
   ) { }
 
   ngOnInit(): void {
-    this.checkAuth();
+    // ── Reactively update auth state whenever MSAL interaction completes ──
+    // This fires after: redirect login, redirect logout, token refresh, etc.
+    // Without this, the navbar only reads auth state once at startup and
+    // never knows when the user signs in via redirect.
+    this.msalBroadcastService.inProgress$
+      .pipe(
+        filter((status: InteractionStatus) => status === InteractionStatus.None),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => {
+        this.syncAuthState();
+      });
 
-    // Only load documents if authenticated
-    if (this.isAuthenticated) {
-      this.loadDocumentsForSearch();
-    }
+    // Also read immediately on init (handles page refresh case)
+    this.syncAuthState();
 
+    // Debounced search
     this.searchSubject
       .pipe(debounceTime(200), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe((query) => {
@@ -59,17 +86,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   login(): void {
     if (this.msalGuardConfig.interactionType === InteractionType.Redirect) {
       const authRequest = this.msalGuardConfig.authRequest;
-      const scopes = authRequest && typeof authRequest !== 'function'
-        ? authRequest.scopes ?? []
-        : [];
+      const scopes =
+        authRequest && typeof authRequest !== 'function' ? authRequest.scopes ?? [] : [];
       this.authService.loginRedirect({ scopes });
     }
   }
 
   logout(): void {
-    this.authService.logoutRedirect({
-      postLogoutRedirectUri: '/',
-    });
+    this.authService.logoutRedirect({ postLogoutRedirectUri: '/' });
   }
 
   navigateToHome(): void {
@@ -98,7 +122,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.searchSubject.next(query);
   }
 
-  navigateToDocument(doc: DocumentResponse): void {
+  navigateToDocument(_doc: DocumentResponse): void {
     this.closeSearch();
     this.router.navigate(['/documents']);
   }
@@ -106,12 +130,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
   getFileIcon(fileName: string): string {
     const ext = fileName?.split('.').pop()?.toLowerCase();
     switch (ext) {
-      case 'pdf': return 'picture_as_pdf';
-      case 'docx': case 'doc': return 'description';
-      case 'xlsx': case 'xls': return 'table_view';
-      case 'pptx': case 'ppt': return 'slideshow';
-      case 'jpg': case 'jpeg': case 'png': case 'gif': case 'webp': return 'image';
-      default: return 'insert_drive_file';
+      case 'pdf':
+        return 'picture_as_pdf';
+      case 'docx':
+      case 'doc':
+        return 'description';
+      case 'xlsx':
+      case 'xls':
+        return 'table_view';
+      case 'pptx':
+      case 'ppt':
+        return 'slideshow';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return 'image';
+      default:
+        return 'insert_drive_file';
     }
   }
 
@@ -136,18 +173,45 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  private checkAuth(): void {
-    const accounts = this.authService.instance.getAllAccounts();
-    this.isAuthenticated = accounts.length > 0;
-    if (this.isAuthenticated) {
-      const account = accounts[0];
-      this.userName = account.name || account.username || '';
+  /**
+   * Syncs isAuthenticated + userName from MSAL account cache.
+   * Called reactively whenever MSAL interaction status becomes None
+   * (i.e., after login redirect completes, logout, token refresh, etc.)
+   */
+  private syncAuthState(): void {
+    const account =
+      this.authService.instance.getActiveAccount() ??
+      this.authService.instance.getAllAccounts()[0] ??
+      null;
+
+    const wasAuthenticated = this.isAuthenticated;
+    this.isAuthenticated = !!account;
+
+    if (account) {
+      const fullName = account.name ?? account.username ?? '';
+      this.userName = fullName.split(' ')[0] || fullName;
+    } else {
+      this.userName = '';
     }
+
+    // Show snackbar on login transition
+    if (!wasAuthenticated && this.isAuthenticated) {
+      this.snackbar.success(`Welcome back, ${this.userName}! 👋`, 3000);
+      this.loadDocumentsForSearch();
+    }
+
+    // Show snackbar on logout transition
+    if (wasAuthenticated && !this.isAuthenticated) {
+      this.snackbar.info('You have been signed out.', 3000);
+    }
+
+    this.cdr.detectChanges();
   }
 
   private loadDocumentsForSearch(): void {
     this.isLoadingSearch = true;
-    this.documentService.getDocuments()
+    this.documentService
+      .getDocuments()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (docs) => {
@@ -157,7 +221,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
         error: () => {
           this.allDocuments = [];
           this.isLoadingSearch = false;
-        }
+        },
       });
   }
 

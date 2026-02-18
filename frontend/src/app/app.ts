@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar.component/navbar.component';
 import { FooterComponent } from './components/footer.component/footer.component';
+import { SnackbarComponent } from './components/snackbar.component/snackbar.component';
 import { MsalBroadcastService, MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
 import { Subject } from 'rxjs';
@@ -10,7 +11,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, NavbarComponent, FooterComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent, FooterComponent, SnackbarComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -22,7 +23,7 @@ export class App implements OnInit, OnDestroy {
     private authService: MsalService,
     private msalBroadcastService: MsalBroadcastService,
     @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     // Handle redirect callback (when user comes back from login page)
