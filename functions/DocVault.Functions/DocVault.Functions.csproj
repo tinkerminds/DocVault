@@ -23,8 +23,6 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
     <!-- PdfPig: render PDF first page as thumbnail + extract text -->
     <PackageReference Include="PdfPig" Version="0.1.9" />
-    <!-- Cosmos DB: read and update document metadata -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.38.1" />
   </ItemGroup>
 
 </Project>
