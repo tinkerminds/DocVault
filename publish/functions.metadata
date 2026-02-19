@@ -1,0 +1,23 @@
+[
+  {
+    "name": "BlobTriggerFunction",
+    "scriptFile": "DocVault.Functions.dll",
+    "entryPoint": "DocVault.Functions.BlobTriggerFunction.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "fileStream",
+        "direction": "In",
+        "type": "blobTrigger",
+        "path": "uploads/{name}",
+        "connection": "AzureWebJobsStorage",
+        "properties": {
+          "supportsDeferredBinding": "True"
+        }
+      }
+    ]
+  }
+]

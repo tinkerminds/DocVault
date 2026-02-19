@@ -28,6 +28,13 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
   showDeleteDialog: boolean = false;
   documentToDelete: DocumentUI | null = null;
   isDeleting: boolean = false;
+
+  // Filter state
+  showFilterPanel: boolean = false;
+  filterType: string = 'all';
+  filterStatus: string = 'all';
+  filterDateRange: string = 'all';
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -209,18 +216,51 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
   }
 
   private filterClientSide(): void {
+    let docs = [...this.allDocuments];
+
+    // Text search filter
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
-      this.filteredDocuments = this.allDocuments.filter(
+      docs = docs.filter(
         (doc) =>
           doc.name.toLowerCase().includes(query) ||
           doc.category.toLowerCase().includes(query) ||
           (doc.excerpt && doc.excerpt.toLowerCase().includes(query)) ||
           doc.tags.some((tag) => tag.toLowerCase().includes(query)),
       );
-    } else {
-      this.filteredDocuments = [...this.allDocuments];
     }
+
+    // File type filter
+    if (this.filterType !== 'all') {
+      docs = docs.filter((doc) => doc.category.toLowerCase() === this.filterType);
+    }
+
+    // Status filter
+    if (this.filterStatus !== 'all') {
+      docs = docs.filter((doc) => doc.status === this.filterStatus);
+    }
+
+    // Date range filter
+    if (this.filterDateRange !== 'all') {
+      const now = new Date();
+      let cutoff: Date;
+      switch (this.filterDateRange) {
+        case '7days':
+          cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30days':
+          cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90days':
+          cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          cutoff = new Date(0);
+      }
+      docs = docs.filter((doc) => new Date(doc.uploadDate) >= cutoff);
+    }
+
+    this.filteredDocuments = docs;
     this.totalResults = this.filteredDocuments.length;
     this.paginate();
   }
@@ -320,6 +360,38 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // ── Filter methods ────────────────────────────────────────────────────
+  toggleFilter(): void {
+    this.showFilterPanel = !this.showFilterPanel;
+  }
+
+  applyFilters(): void {
+    this.currentPage = 1;
+    this.filterAndPaginate();
+    this.showFilterPanel = false;
+  }
+
+  clearFilters(): void {
+    this.filterType = 'all';
+    this.filterStatus = 'all';
+    this.filterDateRange = 'all';
+    this.currentPage = 1;
+    this.filterAndPaginate();
+    this.showFilterPanel = false;
+  }
+
+  hasActiveFilters(): boolean {
+    return this.filterType !== 'all' || this.filterStatus !== 'all' || this.filterDateRange !== 'all';
+  }
+
+  getActiveFilterCount(): number {
+    let count = 0;
+    if (this.filterType !== 'all') count++;
+    if (this.filterStatus !== 'all') count++;
+    if (this.filterDateRange !== 'all') count++;
+    return count;
   }
 }
 
