@@ -77,6 +77,16 @@ builder.Services.AddSingleton<ServiceBusClient>(sp =>
     return new ServiceBusClient(connectionString);
 });
 
+// Application Insights Analytics Service
+// Uses a named HttpClient to query the App Insights REST API.
+// The App ID and API Key are read from config (Key Vault in production).
+builder.Services.AddHttpClient("AppInsights", client =>
+{
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
 // ---------- App Pipeline ----------
 
 var app = builder.Build();
