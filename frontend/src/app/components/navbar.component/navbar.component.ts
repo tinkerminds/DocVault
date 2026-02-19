@@ -166,9 +166,36 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.filteredDocuments = this.allDocuments.slice(0, 5);
       return;
     }
+
+    // Use server-side search for queries >= 3 chars
+    if (query.trim().length >= 3) {
+      this.isLoadingSearch = true;
+      this.documentService.searchDocuments(query.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (docs) => {
+            this.filteredDocuments = docs.slice(0, 5);
+            this.isLoadingSearch = false;
+          },
+          error: () => {
+            // Fallback to client-side
+            this.clientSideFilter(query);
+            this.isLoadingSearch = false;
+          }
+        });
+    } else {
+      this.clientSideFilter(query);
+    }
+  }
+
+  private clientSideFilter(query: string): void {
     const lower = query.toLowerCase();
     this.filteredDocuments = this.allDocuments
-      .filter((doc) => doc.fileName.toLowerCase().includes(lower))
+      .filter((doc) =>
+        doc.fileName.toLowerCase().includes(lower) ||
+        (doc.tags && doc.tags.some(t => t.toLowerCase().includes(lower))) ||
+        (doc.excerpt && doc.excerpt.toLowerCase().includes(lower))
+      )
       .slice(0, 5);
   }
 }

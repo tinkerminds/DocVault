@@ -10,6 +10,10 @@ export interface DocumentResponse {
     uploadedAt: string;
     status: string;
     downloadUrl: string;
+    tags: string[];
+    excerpt: string | null;
+    thumbnailUrl: string | null;
+    description: string | null;
 }
 
 /**
@@ -27,4 +31,8 @@ export interface DocumentUI {
     iconColor: string;
     downloadUrl: string;
     status: string;
+    tags: string[];
+    excerpt: string | null;
+    thumbnailUrl: string | null;
+    description: string | null;
 }

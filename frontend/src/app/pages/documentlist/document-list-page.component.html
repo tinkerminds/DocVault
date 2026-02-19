@@ -20,10 +20,53 @@
           (input)="onSearchChange()"
         />
       </div>
-      <button class="btn-filter">
-        <span class="material-symbols-outlined">filter_list</span>
-        <span>Filter</span>
-      </button>
+      <div class="filter-wrapper">
+        <button class="btn-filter" [class.active]="showFilterPanel || hasActiveFilters()" (click)="toggleFilter()">
+          <span class="material-symbols-outlined">filter_list</span>
+          <span>Filter</span>
+          <span *ngIf="hasActiveFilters()" class="filter-count">{{ getActiveFilterCount() }}</span>
+        </button>
+
+        <!-- Filter Dropdown Panel -->
+        <div *ngIf="showFilterPanel" class="filter-panel">
+          <div class="filter-group">
+            <label class="filter-label">File Type</label>
+            <select class="filter-select" [(ngModel)]="filterType">
+              <option value="all">All Types</option>
+              <option value="document">Document</option>
+              <option value="image">Image</option>
+              <option value="spreadsheet">Spreadsheet</option>
+              <option value="archive">Archive</option>
+              <option value="file">Other</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Status</label>
+            <select class="filter-select" [(ngModel)]="filterStatus">
+              <option value="all">All Statuses</option>
+              <option value="processed">Ready</option>
+              <option value="pending">Processing</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Upload Date</label>
+            <select class="filter-select" [(ngModel)]="filterDateRange">
+              <option value="all">All Time</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="90days">Last 90 Days</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button class="filter-btn filter-btn-clear" (click)="clearFilters()">Clear</button>
+            <button class="filter-btn filter-btn-apply" (click)="applyFilters()">Apply</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Documents Table -->
@@ -34,6 +77,7 @@
             <th class="col-name">Name</th>
             <th class="col-date">Upload Date</th>
             <th class="col-size">Size</th>
+            <th class="col-status">Status</th>
             <th class="col-actions">Actions</th>
           </tr>
         </thead>
@@ -41,7 +85,12 @@
           <tr *ngFor="let doc of paginatedDocuments" class="table-row">
             <td class="cell-name">
               <div class="document-item">
+                <!-- Show thumbnail if available, otherwise show file icon -->
+                <div *ngIf="doc.thumbnailUrl" class="document-thumbnail">
+                  <img [src]="doc.thumbnailUrl" [alt]="doc.name" class="thumbnail-img" (error)="doc.thumbnailUrl = null" />
+                </div>
                 <div
+                  *ngIf="!doc.thumbnailUrl"
                   class="document-icon"
                   [style.backgroundColor]="doc.bgColor"
                   [style.color]="doc.iconColor"
@@ -51,6 +100,10 @@
                 <div class="document-info">
                   <div class="document-name">{{ doc.name }}</div>
                   <div class="document-meta">{{ doc.category }} • Uploaded by {{ doc.uploadedBy }}</div>
+                  <div *ngIf="doc.excerpt" class="document-excerpt">{{ doc.excerpt }}</div>
+                  <div *ngIf="doc.tags && doc.tags.length > 0" class="document-tags">
+                    <span *ngFor="let tag of doc.tags" class="tag-badge">{{ tag }}</span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -59,6 +112,21 @@
             </td>
             <td class="cell-size">
               <span class="size-badge">{{ doc.size }}</span>
+            </td>
+            <td class="cell-status">
+              <span
+                class="status-badge"
+                [ngClass]="{
+                  'status-uploaded': doc.status === 'uploaded',
+                  'status-processed': doc.status === 'processed',
+                  'status-failed': doc.status === 'failed'
+                }"
+              >
+                <span class="material-symbols-outlined status-icon">
+                  {{ doc.status === 'processed' ? 'check_circle' : doc.status === 'failed' ? 'error' : 'schedule' }}
+                </span>
+                {{ doc.status === 'uploaded' ? 'Processing' : doc.status === 'processed' ? 'Ready' : 'Failed' }}
+              </span>
             </td>
             <td class="cell-actions">
               <div class="actions-group">
@@ -77,11 +145,11 @@
                   <span class="material-symbols-outlined">visibility</span>
                 </button>
                 <button
-                  class="action-btn"
-                  title="More"
-                  (click)="moreActions(doc)"
+                  class="action-btn action-btn-delete"
+                  title="Delete"
+                  (click)="confirmDelete(doc)"
                 >
-                  <span class="material-symbols-outlined">more_vert</span>
+                  <span class="material-symbols-outlined">delete</span>
                 </button>
               </div>
             </td>
@@ -126,4 +194,25 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <div *ngIf="showDeleteDialog" class="dialog-overlay" (click)="cancelDelete()">
+    <div class="dialog-box" (click)="$event.stopPropagation()">
+      <div class="dialog-icon">
+        <span class="material-symbols-outlined">warning</span>
+      </div>
+      <h3 class="dialog-title">Delete Document</h3>
+      <p class="dialog-message">
+        Are you sure you want to delete <strong>{{ documentToDelete?.name }}</strong>? This action cannot be undone.
+      </p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" (click)="executeDelete()" [disabled]="isDeleting">
+          <span *ngIf="isDeleting" class="spinner"></span>
+          {{ isDeleting ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </main>
+

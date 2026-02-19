@@ -25,6 +25,16 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
   paginatedDocuments: DocumentUI[] = [];
   isLoading: boolean = false;
   errorMessage: string = '';
+  showDeleteDialog: boolean = false;
+  documentToDelete: DocumentUI | null = null;
+  isDeleting: boolean = false;
+
+  // Filter state
+  showFilterPanel: boolean = false;
+  filterType: string = 'all';
+  filterStatus: string = 'all';
+  filterDateRange: string = 'all';
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -91,7 +101,7 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
       id: doc.id,
       name: doc.fileName,
       category: this.getCategoryFromContentType(doc.contentType),
-      uploadedBy: 'User', // Placeholder - backend doesn't provide this
+      uploadedBy: 'User',
       uploadDate: this.formatDate(doc.uploadedAt),
       size: this.formatFileSize(doc.sizeBytes),
       icon: this.getFileIcon(fileExt),
@@ -99,6 +109,10 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
       iconColor: colors.icon,
       downloadUrl: doc.downloadUrl,
       status: doc.status,
+      tags: doc.tags || [],
+      excerpt: doc.excerpt || null,
+      thumbnailUrl: doc.thumbnailUrl || null,
+      description: doc.description || null,
     };
   }
 
@@ -177,25 +191,85 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
 
   onSearchChange(): void {
     this.currentPage = 1;
-    this.filterAndPaginate();
+
+    // Use server-side search for queries >= 3 characters
+    if (this.searchQuery.trim().length >= 3) {
+      this.isLoading = true;
+      this.documentService.searchDocuments(this.searchQuery.trim()).subscribe({
+        next: (documents) => {
+          this.filteredDocuments = documents.map((doc) => this.mapToUIDocument(doc));
+          this.totalResults = this.filteredDocuments.length;
+          this.paginate();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Fallback to client-side filter on error
+          this.filterClientSide();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
+    } else {
+      this.filterClientSide();
+    }
+  }
+
+  private filterClientSide(): void {
+    let docs = [...this.allDocuments];
+
+    // Text search filter
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
+      docs = docs.filter(
+        (doc) =>
+          doc.name.toLowerCase().includes(query) ||
+          doc.category.toLowerCase().includes(query) ||
+          (doc.excerpt && doc.excerpt.toLowerCase().includes(query)) ||
+          doc.tags.some((tag) => tag.toLowerCase().includes(query)),
+      );
+    }
+
+    // File type filter
+    if (this.filterType !== 'all') {
+      docs = docs.filter((doc) => doc.category.toLowerCase() === this.filterType);
+    }
+
+    // Status filter
+    if (this.filterStatus !== 'all') {
+      docs = docs.filter((doc) => doc.status === this.filterStatus);
+    }
+
+    // Date range filter
+    if (this.filterDateRange !== 'all') {
+      const now = new Date();
+      let cutoff: Date;
+      switch (this.filterDateRange) {
+        case '7days':
+          cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30days':
+          cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90days':
+          cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          cutoff = new Date(0);
+      }
+      docs = docs.filter((doc) => new Date(doc.uploadDate) >= cutoff);
+    }
+
+    this.filteredDocuments = docs;
+    this.totalResults = this.filteredDocuments.length;
+    this.paginate();
   }
 
   filterAndPaginate(): void {
-    // Filter documents
-    if (this.searchQuery.trim()) {
-      this.filteredDocuments = this.allDocuments.filter(
-        (doc) =>
-          doc.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          doc.category.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          doc.uploadedBy.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      );
-    } else {
-      this.filteredDocuments = [...this.allDocuments];
-    }
+    this.filterClientSide();
+  }
 
-    this.totalResults = this.filteredDocuments.length;
-
-    // Paginate
+  private paginate(): void {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
     this.paginatedDocuments = this.filteredDocuments.slice(startIndex, endIndex);
@@ -248,7 +322,76 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  moreActions(doc: DocumentUI): void {
-    console.log('More actions for:', doc.name);
+  confirmDelete(doc: DocumentUI): void {
+    this.documentToDelete = doc;
+    this.showDeleteDialog = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteDialog = false;
+    this.documentToDelete = null;
+  }
+
+  executeDelete(): void {
+    if (!this.documentToDelete) return;
+
+    this.isDeleting = true;
+    const docId = this.documentToDelete.id;
+    const docName = this.documentToDelete.name;
+
+    this.documentService.deleteDocument(docId).subscribe({
+      next: () => {
+        console.log('Document deleted successfully:', docName);
+        // Remove from local arrays
+        this.allDocuments = this.allDocuments.filter((d) => d.id !== docId);
+        this.totalResults = this.allDocuments.length;
+        this.filterAndPaginate();
+        this.showDeleteDialog = false;
+        this.documentToDelete = null;
+        this.isDeleting = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error deleting document:', error);
+        this.errorMessage = `Failed to delete "${docName}". Please try again.`;
+        this.showDeleteDialog = false;
+        this.documentToDelete = null;
+        this.isDeleting = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ── Filter methods ────────────────────────────────────────────────────
+  toggleFilter(): void {
+    this.showFilterPanel = !this.showFilterPanel;
+  }
+
+  applyFilters(): void {
+    this.currentPage = 1;
+    this.filterAndPaginate();
+    this.showFilterPanel = false;
+  }
+
+  clearFilters(): void {
+    this.filterType = 'all';
+    this.filterStatus = 'all';
+    this.filterDateRange = 'all';
+    this.currentPage = 1;
+    this.filterAndPaginate();
+    this.showFilterPanel = false;
+  }
+
+  hasActiveFilters(): boolean {
+    return this.filterType !== 'all' || this.filterStatus !== 'all' || this.filterDateRange !== 'all';
+  }
+
+  getActiveFilterCount(): number {
+    let count = 0;
+    if (this.filterType !== 'all') count++;
+    if (this.filterStatus !== 'all') count++;
+    if (this.filterDateRange !== 'all') count++;
+    return count;
   }
 }
+

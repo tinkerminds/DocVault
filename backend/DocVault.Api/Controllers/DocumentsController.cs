@@ -35,7 +35,7 @@ public class DocumentsController : ControllerBase
     /// POST /api/documents
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<DocumentUploadResponse>> Upload(IFormFile file, [FromForm] string? tags)
+    public async Task<ActionResult<DocumentUploadResponse>> Upload(IFormFile file, [FromForm] string? tags, [FromForm] string? description)
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file provided.");
@@ -55,6 +55,7 @@ public class DocumentsController : ControllerBase
             Tags = string.IsNullOrWhiteSpace(tags)
                 ? new List<string>()
                 : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+            Description = description,
             Status = "pending"
         };
 
@@ -142,6 +143,22 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
+    /// Search documents by filename, tags, or excerpt content.
+    /// GET /api/documents/search?q=term
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<DocumentUploadResponse>>> Search([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest("Search query parameter 'q' is required.");
+
+        var documents = await _cosmosService.SearchDocumentsAsync(q);
+        var response = documents.Select(MapToResponse);
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Extract the authenticated user's Object ID (oid) from the JWT token.
     /// </summary>
     private string GetUserId()
@@ -161,7 +178,13 @@ public class DocumentsController : ControllerBase
             SizeBytes = doc.SizeBytes,
             UploadedAt = doc.UploadedAt,
             Status = doc.Status,
-            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl)
+            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl),
+            Tags = doc.Tags,
+            Excerpt = doc.Excerpt,
+            ThumbnailUrl = string.IsNullOrEmpty(doc.ThumbnailUrl)
+                ? null
+                : _blobService.GetSasDownloadUrl(doc.ThumbnailUrl),
+            Description = doc.Description
         };
     }
 }

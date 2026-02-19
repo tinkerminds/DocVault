@@ -1,10 +1,21 @@
 using DocVault.Api.Services;
 using Microsoft.Azure.Cosmos;
 using Azure.Storage.Blobs;
+using Azure.Identity;
 using Microsoft.Identity.Web;
 using Azure.Messaging.ServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------- Key Vault Configuration (Managed Identity) ----------
+// When deployed to Azure with a Key Vault name configured,
+// secrets are loaded directly from Key Vault using Managed Identity.
+var keyVaultName = builder.Configuration["KeyVaultName"];
+if (!string.IsNullOrEmpty(keyVaultName))
+{
+    var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+}
 
 // ---------- Services ----------
 
