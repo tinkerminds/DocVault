@@ -67,23 +67,91 @@ public class ThumbnailService : IThumbnailService
         return output;
     }
 
-    // ── PDF thumbnail (first page → text-based placeholder) ────────────────
+    // ── PDF thumbnail (render actual first page) ────────────────────────────
     private Stream GeneratePdfThumbnail(Stream input)
     {
-        // PdfPig: open PDF and read first page words to build a text snapshot
-        // Then render a simple 200x200 JPEG with the page number label
-        // (Full rasterisation requires a native PDF renderer; PdfPig is text-only)
-        using var pdf = PdfDocument.Open(input);
-        var page = pdf.GetPage(1);
+        try
+        {
+            // Read the stream into a byte array for Docnet
+            byte[] pdfBytes;
+            if (input is MemoryStream ms)
+            {
+                pdfBytes = ms.ToArray();
+            }
+            else
+            {
+                using var temp = new MemoryStream();
+                input.CopyTo(temp);
+                pdfBytes = temp.ToArray();
+            }
 
-        // Build a simple grey thumbnail with "PDF" label using SkiaSharp
+            // Render the first page at higher resolution for quality
+            var renderWidth = ThumbnailSize * 4;
+            var renderHeight = ThumbnailSize * 4;
+
+            using var library = Docnet.Core.DocLib.Instance;
+            using var docReader = library.GetDocReader(
+                pdfBytes,
+                new Docnet.Core.Models.PageDimensions(renderWidth, renderHeight));
+            using var pageReader = docReader.GetPageReader(0);
+
+            var rawBytes = pageReader.GetImage();
+            var pageWidth = pageReader.GetPageWidth();
+            var pageHeight = pageReader.GetPageHeight();
+
+            // Convert raw BGRA pixel data to SkiaSharp bitmap
+            var info = new SKImageInfo(pageWidth, pageHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+            using var bitmap = new SKBitmap(info);
+
+            var handle = System.Runtime.InteropServices.GCHandle.Alloc(rawBytes, System.Runtime.InteropServices.GCHandleType.Pinned);
+            try
+            {
+                bitmap.InstallPixels(info, handle.AddrOfPinnedObject(), info.RowBytes);
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            // Resize to thumbnail dimensions keeping aspect ratio
+            var (width, height) = ScaleProportional(pageWidth, pageHeight, ThumbnailSize);
+            using var resized = bitmap.Resize(new SKImageInfo(width, height), SKFilterQuality.High);
+            using var image = SKImage.FromBitmap(resized);
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
+
+            var output = new MemoryStream();
+            data.SaveTo(output);
+            output.Position = 0;
+
+            _logger.LogInformation("PDF first-page thumbnail generated: {Width}x{Height}", width, height);
+            return output;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Docnet rendering failed, falling back to placeholder thumbnail");
+            return GeneratePdfPlaceholderThumbnail(input);
+        }
+    }
+
+    // ── Fallback PDF placeholder thumbnail ─────────────────────────────────
+    private Stream GeneratePdfPlaceholderThumbnail(Stream input)
+    {
+        int pageCount;
+        try
+        {
+            input.Position = 0;
+            using var pdf = PdfDocument.Open(input);
+            pageCount = pdf.NumberOfPages;
+        }
+        catch
+        {
+            pageCount = 0;
+        }
+
         using var surface = SKSurface.Create(new SKImageInfo(ThumbnailSize, ThumbnailSize));
         var canvas = surface.Canvas;
-
-        // Background
         canvas.Clear(SKColors.LightGray);
 
-        // Draw "PDF" label
         using var paint = new SKPaint
         {
             Color = SKColors.DarkSlateGray,
@@ -94,15 +162,17 @@ public class ThumbnailService : IThumbnailService
         };
         canvas.DrawText("PDF", ThumbnailSize / 2f, ThumbnailSize / 2f + 12, paint);
 
-        // Draw page count
-        using var smallPaint = new SKPaint
+        if (pageCount > 0)
         {
-            Color = SKColors.Gray,
-            TextSize = 16,
-            IsAntialias = true,
-            TextAlign = SKTextAlign.Center
-        };
-        canvas.DrawText($"{pdf.NumberOfPages} page(s)", ThumbnailSize / 2f, ThumbnailSize / 2f + 40, smallPaint);
+            using var smallPaint = new SKPaint
+            {
+                Color = SKColors.Gray,
+                TextSize = 16,
+                IsAntialias = true,
+                TextAlign = SKTextAlign.Center
+            };
+            canvas.DrawText($"{pageCount} page(s)", ThumbnailSize / 2f, ThumbnailSize / 2f + 40, smallPaint);
+        }
 
         using var image = surface.Snapshot();
         using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
@@ -111,7 +181,7 @@ public class ThumbnailService : IThumbnailService
         data.SaveTo(output);
         output.Position = 0;
 
-        _logger.LogInformation("PDF thumbnail generated for {PageCount} page document", pdf.NumberOfPages);
+        _logger.LogInformation("PDF placeholder thumbnail generated");
         return output;
     }
 

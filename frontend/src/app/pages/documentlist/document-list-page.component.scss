@@ -322,19 +322,19 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 2.5rem;
-                height: 2.5rem;
+                width: 6rem;
+                height: 7rem;
                 border-radius: $radius-base;
                 flex-shrink: 0;
 
                 .material-symbols-outlined {
-                  font-size: 20px;
+                  font-size: 24px;
                 }
               }
 
               .document-thumbnail {
-                width: 2.5rem;
-                height: 2.5rem;
+                width: 6rem;
+                height: 7rem;
                 border-radius: $radius-base;
                 flex-shrink: 0;
                 overflow: hidden;
@@ -353,7 +353,7 @@
                 min-width: 0;
 
                 .document-name {
-                  font-size: 0.875rem;
+                  font-size: 0.95rem;
                   font-weight: 600;
                   color: $text-primary;
                   white-space: nowrap;
@@ -362,7 +362,7 @@
                 }
 
                 .document-meta {
-                  font-size: 0.75rem;
+                  font-size: 0.85rem;
                   color: $text-secondary;
                   white-space: nowrap;
                   overflow: hidden;
