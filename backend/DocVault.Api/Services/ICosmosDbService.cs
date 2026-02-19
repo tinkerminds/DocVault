@@ -33,4 +33,10 @@ public interface ICosmosDbService
     /// <param name="id">Document ID</param>
     /// <param name="userId">User ID (partition key)</param>
     Task DeleteDocumentAsync(string id, string userId);
+
+    /// <summary>
+    /// Search documents across all users by filename, tags, or excerpt content.
+    /// </summary>
+    /// <param name="searchTerm">The search term to match against</param>
+    Task<IEnumerable<DocumentMetadata>> SearchDocumentsAsync(string searchTerm);
 }

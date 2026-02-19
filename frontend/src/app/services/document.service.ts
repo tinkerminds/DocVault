@@ -75,6 +75,24 @@ export class DocumentService {
   }
 
   /**
+   * Search documents by filename, tags, or excerpt content (server-side)
+   * GET /api/documents/search?q=term
+   * @param query - Search term
+   */
+  searchDocuments(query: string): Observable<DocumentResponse[]> {
+    return this.http
+      .get<DocumentResponse[]>(`${this.apiUrl}/search`, {
+        params: { q: query },
+      })
+      .pipe(
+        tap((response) => {
+          console.log('Search results:', response);
+        }),
+        catchError(this.handleError),
+      );
+  }
+
+  /**
    * Handle HTTP errors
    */
   private handleError(error: HttpErrorResponse): Observable<never> {

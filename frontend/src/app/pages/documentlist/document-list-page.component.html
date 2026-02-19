@@ -34,6 +34,7 @@
             <th class="col-name">Name</th>
             <th class="col-date">Upload Date</th>
             <th class="col-size">Size</th>
+            <th class="col-status">Status</th>
             <th class="col-actions">Actions</th>
           </tr>
         </thead>
@@ -41,7 +42,12 @@
           <tr *ngFor="let doc of paginatedDocuments" class="table-row">
             <td class="cell-name">
               <div class="document-item">
+                <!-- Show thumbnail if available, otherwise show file icon -->
+                <div *ngIf="doc.thumbnailUrl" class="document-thumbnail">
+                  <img [src]="doc.thumbnailUrl" [alt]="doc.name" class="thumbnail-img" />
+                </div>
                 <div
+                  *ngIf="!doc.thumbnailUrl"
                   class="document-icon"
                   [style.backgroundColor]="doc.bgColor"
                   [style.color]="doc.iconColor"
@@ -51,6 +57,10 @@
                 <div class="document-info">
                   <div class="document-name">{{ doc.name }}</div>
                   <div class="document-meta">{{ doc.category }} • Uploaded by {{ doc.uploadedBy }}</div>
+                  <div *ngIf="doc.excerpt" class="document-excerpt">{{ doc.excerpt }}</div>
+                  <div *ngIf="doc.tags && doc.tags.length > 0" class="document-tags">
+                    <span *ngFor="let tag of doc.tags" class="tag-badge">{{ tag }}</span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -59,6 +69,21 @@
             </td>
             <td class="cell-size">
               <span class="size-badge">{{ doc.size }}</span>
+            </td>
+            <td class="cell-status">
+              <span
+                class="status-badge"
+                [ngClass]="{
+                  'status-uploaded': doc.status === 'uploaded',
+                  'status-processed': doc.status === 'processed',
+                  'status-failed': doc.status === 'failed'
+                }"
+              >
+                <span class="material-symbols-outlined status-icon">
+                  {{ doc.status === 'processed' ? 'check_circle' : doc.status === 'failed' ? 'error' : 'schedule' }}
+                </span>
+                {{ doc.status === 'uploaded' ? 'Processing' : doc.status === 'processed' ? 'Ready' : 'Failed' }}
+              </span>
             </td>
             <td class="cell-actions">
               <div class="actions-group">

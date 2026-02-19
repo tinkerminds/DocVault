@@ -118,6 +118,22 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
+    /// Search documents by filename, tags, or excerpt content.
+    /// GET /api/documents/search?q=term
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<DocumentUploadResponse>>> Search([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest("Search query parameter 'q' is required.");
+
+        var documents = await _cosmosService.SearchDocumentsAsync(q);
+        var response = documents.Select(MapToResponse);
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Extract the authenticated user's Object ID (oid) from the JWT token.
     /// </summary>
     private string GetUserId()
@@ -137,7 +153,10 @@ public class DocumentsController : ControllerBase
             SizeBytes = doc.SizeBytes,
             UploadedAt = doc.UploadedAt,
             Status = doc.Status,
-            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl)
+            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl),
+            Tags = doc.Tags,
+            Excerpt = doc.Excerpt,
+            ThumbnailUrl = doc.ThumbnailUrl
         };
     }
 }

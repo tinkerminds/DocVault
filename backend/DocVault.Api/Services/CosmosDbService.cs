@@ -80,4 +80,33 @@ public class CosmosDbService : ICosmosDbService
             _logger.LogInformation("Soft-deleted document {DocumentId} for user {UserId}", id, userId);
         }
     }
+
+    public async Task<IEnumerable<DocumentMetadata>> SearchDocumentsAsync(string searchTerm)
+    {
+        var queryText = @"
+            SELECT * FROM c 
+            WHERE c.status != 'deleted' 
+            AND (
+                CONTAINS(LOWER(c.fileName), LOWER(@term)) 
+                OR CONTAINS(LOWER(c.excerpt), LOWER(@term))
+                OR ARRAY_CONTAINS(c.tags, @term)
+            )";
+
+        var query = new QueryDefinition(queryText)
+            .WithParameter("@term", searchTerm);
+
+        // Cross-partition query — searches across all users
+        var iterator = _container.GetItemQueryIterator<DocumentMetadata>(query);
+
+        var results = new List<DocumentMetadata>();
+
+        while (iterator.HasMoreResults)
+        {
+            var response = await iterator.ReadNextAsync();
+            results.AddRange(response);
+        }
+
+        _logger.LogInformation("Search for '{SearchTerm}' returned {Count} results", searchTerm, results.Count);
+        return results;
+    }
 }
