@@ -2,6 +2,7 @@ using DocVault.Api.Services;
 using Microsoft.Azure.Cosmos;
 using Azure.Storage.Blobs;
 using Microsoft.Identity.Web;
+using Azure.Messaging.ServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,16 @@ builder.Services.AddSingleton<BlobServiceClient>(sp =>
     return new BlobServiceClient(connectionString);
 });
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
+
+
+// Azure Service Bus
+builder.Services.AddSingleton<ServiceBusClient>(sp =>
+{
+    var connectionString = builder.Configuration["ServiceBus:ConnectionString"]
+        ?? throw new InvalidOperationException("ServiceBus connection string is not configured.");
+
+    return new ServiceBusClient(connectionString);
+});
 
 // ---------- App Pipeline ----------
 

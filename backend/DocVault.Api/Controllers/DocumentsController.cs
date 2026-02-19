@@ -3,6 +3,8 @@ using DocVault.Api.Models;
 using DocVault.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Azure.Messaging.ServiceBus;
+using System.Text.Json;
 
 namespace DocVault.Api.Controllers;
 
@@ -14,15 +16,18 @@ public class DocumentsController : ControllerBase
     private readonly IBlobStorageService _blobService;
     private readonly ICosmosDbService _cosmosService;
     private readonly ILogger<DocumentsController> _logger;
+    private readonly ServiceBusClient _serviceBusClient;
 
     public DocumentsController(
         IBlobStorageService blobService,
         ICosmosDbService cosmosService,
-        ILogger<DocumentsController> logger)
+        ILogger<DocumentsController> logger,
+        ServiceBusClient serviceBusClient)
     {
         _blobService = blobService;
         _cosmosService = cosmosService;
         _logger = logger;
+        _serviceBusClient = serviceBusClient;
     }
 
     /// <summary>
@@ -54,6 +59,25 @@ public class DocumentsController : ControllerBase
         };
 
         var created = await _cosmosService.AddDocumentAsync(document);
+
+        // Send message to Service Bus queue for background processing
+        var sender = _serviceBusClient.CreateSender("document-processing");
+
+        var messageBody = new
+        {
+            documentId = created.Id,
+            userId = created.UserId,
+            blobUrl = created.BlobUrl,
+            fileName = created.FileName
+        };
+
+        var message = new ServiceBusMessage(
+            JsonSerializer.Serialize(messageBody));
+
+        await sender.SendMessageAsync(message);
+
+        _logger.LogInformation("Message sent to Service Bus for document {DocumentId}", created.Id);
+
 
         var response = MapToResponse(created);
 
