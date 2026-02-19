@@ -133,6 +133,117 @@
     &:active {
       transform: scale(0.98);
     }
+
+    &.active {
+      border-color: $primary;
+      color: $primary;
+      background-color: rgba($primary, 0.04);
+
+      .material-symbols-outlined {
+        color: $primary;
+      }
+    }
+
+    .filter-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      padding: 0 0.25rem;
+      border-radius: 9999px;
+      background-color: $primary;
+      color: white;
+      font-size: 0.625rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+
+  .filter-wrapper {
+    position: relative;
+  }
+
+  .filter-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    width: 16rem;
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+
+      .filter-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: $text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .filter-select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid $border-light;
+        border-radius: $radius-base;
+        background-color: white;
+        color: $text-primary;
+        font-size: 0.8125rem;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          border-color: $primary;
+        }
+      }
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+
+      .filter-btn {
+        flex: 1;
+        padding: 0.5rem;
+        border-radius: $radius-base;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+
+        &.filter-btn-clear {
+          background-color: $background-light;
+          color: $text-secondary;
+
+          &:hover {
+            background-color: darken($background-light, 5%);
+          }
+        }
+
+        &.filter-btn-apply {
+          background-color: $primary;
+          color: white;
+
+          &:hover {
+            background-color: darken($primary, 8%);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -211,19 +322,19 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 2.5rem;
-                height: 2.5rem;
+                width: 6rem;
+                height: 7rem;
                 border-radius: $radius-base;
                 flex-shrink: 0;
 
                 .material-symbols-outlined {
-                  font-size: 20px;
+                  font-size: 24px;
                 }
               }
 
               .document-thumbnail {
-                width: 2.5rem;
-                height: 2.5rem;
+                width: 6rem;
+                height: 7rem;
                 border-radius: $radius-base;
                 flex-shrink: 0;
                 overflow: hidden;
@@ -242,7 +353,7 @@
                 min-width: 0;
 
                 .document-name {
-                  font-size: 0.875rem;
+                  font-size: 0.95rem;
                   font-weight: 600;
                   color: $text-primary;
                   white-space: nowrap;
@@ -251,7 +362,7 @@
                 }
 
                 .document-meta {
-                  font-size: 0.75rem;
+                  font-size: 0.85rem;
                   color: $text-secondary;
                   white-space: nowrap;
                   overflow: hidden;

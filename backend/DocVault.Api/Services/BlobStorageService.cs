@@ -49,8 +49,8 @@ public class BlobStorageService : IBlobStorageService
             return blobUrl;
         }
 
-        var containerName = segments[0];
-        var blobName = string.Join("/", segments.Skip(1));
+        var containerName = Uri.UnescapeDataString(segments[0]);
+        var blobName = string.Join("/", segments.Skip(1).Select(Uri.UnescapeDataString));
 
         var containerClient = _serviceClient.GetBlobContainerClient(containerName);
         var targetBlobClient = containerClient.GetBlobClient(blobName);

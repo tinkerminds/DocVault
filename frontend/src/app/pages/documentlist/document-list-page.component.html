@@ -20,10 +20,53 @@
           (input)="onSearchChange()"
         />
       </div>
-      <button class="btn-filter">
-        <span class="material-symbols-outlined">filter_list</span>
-        <span>Filter</span>
-      </button>
+      <div class="filter-wrapper">
+        <button class="btn-filter" [class.active]="showFilterPanel || hasActiveFilters()" (click)="toggleFilter()">
+          <span class="material-symbols-outlined">filter_list</span>
+          <span>Filter</span>
+          <span *ngIf="hasActiveFilters()" class="filter-count">{{ getActiveFilterCount() }}</span>
+        </button>
+
+        <!-- Filter Dropdown Panel -->
+        <div *ngIf="showFilterPanel" class="filter-panel">
+          <div class="filter-group">
+            <label class="filter-label">File Type</label>
+            <select class="filter-select" [(ngModel)]="filterType">
+              <option value="all">All Types</option>
+              <option value="document">Document</option>
+              <option value="image">Image</option>
+              <option value="spreadsheet">Spreadsheet</option>
+              <option value="archive">Archive</option>
+              <option value="file">Other</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Status</label>
+            <select class="filter-select" [(ngModel)]="filterStatus">
+              <option value="all">All Statuses</option>
+              <option value="processed">Ready</option>
+              <option value="pending">Processing</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Upload Date</label>
+            <select class="filter-select" [(ngModel)]="filterDateRange">
+              <option value="all">All Time</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="90days">Last 90 Days</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button class="filter-btn filter-btn-clear" (click)="clearFilters()">Clear</button>
+            <button class="filter-btn filter-btn-apply" (click)="applyFilters()">Apply</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Documents Table -->
@@ -44,7 +87,7 @@
               <div class="document-item">
                 <!-- Show thumbnail if available, otherwise show file icon -->
                 <div *ngIf="doc.thumbnailUrl" class="document-thumbnail">
-                  <img [src]="doc.thumbnailUrl" [alt]="doc.name" class="thumbnail-img" />
+                  <img [src]="doc.thumbnailUrl" [alt]="doc.name" class="thumbnail-img" (error)="doc.thumbnailUrl = null" />
                 </div>
                 <div
                   *ngIf="!doc.thumbnailUrl"
