@@ -1,11 +1,8 @@
-import { Component, Inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
-import { InteractionType } from '@azure/msal-browser';
 import { DocumentService } from '../../services/document.service';
-import { SnackbarService } from '../../services/snackbar.service';
 
 interface UploadFile {
   id: string;
@@ -30,30 +27,18 @@ export class UploadPageComponent {
   fileForm: FormGroup;
   uploadedFiles: UploadFile[] = [];
   tags: string[] = [];
+  showSuccessNotification = false;
 
   constructor(
     private fb: FormBuilder,
     private documentService: DocumentService,
-    private router: Router,
-    private authService: MsalService,
-    private snackbar: SnackbarService,
-    @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration,
+    private router: Router
   ) {
     this.fileForm = this.fb.group({
       tags: [''],
       description: [''],
       destination: ['Main Vault', Validators.required],
     });
-
-    // Redirect to login if not authenticated
-    const accounts = this.authService.instance.getAllAccounts();
-    if (accounts.length === 0) {
-      const authRequest = this.msalGuardConfig.authRequest;
-      const scopes = authRequest && typeof authRequest !== 'function'
-        ? authRequest.scopes ?? []
-        : [];
-      this.authService.loginRedirect({ scopes });
-    }
   }
 
   onFileSelected(event: any): void {
@@ -106,65 +91,38 @@ export class UploadPageComponent {
     if (this.fileForm.valid && this.uploadedFiles.length > 0) {
       const tagsString = this.tags.join(',');
       let completedCount = 0;
-      let failedCount = 0;
-      const readyFiles = this.uploadedFiles.filter(f => f.status === 'ready');
-      const totalFiles = readyFiles.length;
+      const totalFiles = this.uploadedFiles.filter(f => f.status === 'ready').length;
 
-      if (totalFiles === 0) return;
+      this.uploadedFiles.forEach(fileWrapper => {
+        if (fileWrapper.status === 'ready') {
+          fileWrapper.status = 'uploading';
+          fileWrapper.progress = 0;
 
-      readyFiles.forEach(fileWrapper => {
-        fileWrapper.status = 'uploading';
-        fileWrapper.progress = 0;
+          this.documentService.uploadDocument(fileWrapper.file, tagsString)
+            .subscribe({
+              next: (response) => {
+                fileWrapper.status = 'completed';
+                fileWrapper.progress = 100;
+                completedCount++;
 
-        this.documentService.uploadDocument(fileWrapper.file, tagsString)
-          .subscribe({
-            next: () => {
-              fileWrapper.status = 'completed';
-              fileWrapper.progress = 100;
-              completedCount++;
+                // Show success notification when all uploads complete
+                if (completedCount === totalFiles) {
+                  this.showSuccessNotification = true;
 
-              // When all uploads have resolved (success or fail), show summary
-              if (completedCount + failedCount === totalFiles) {
-                if (failedCount === 0) {
-                  const label = totalFiles === 1 ? 'file' : 'files';
-                  this.snackbar.success(
-                    `${totalFiles} ${label} uploaded successfully! ✅`,
-                    3000,
-                  );
-                  setTimeout(() => this.router.navigate(['/documents']), 2000);
-                } else {
-                  this.snackbar.error(
-                    `${completedCount} uploaded, ${failedCount} failed. Check your files and try again.`,
-                    5000,
-                  );
+                  // Navigate to documents page after 2 seconds
+                  setTimeout(() => {
+                    this.router.navigate(['/documents']);
+                  }, 2000);
                 }
+              },
+              error: (err) => {
+                fileWrapper.status = 'failed';
+                fileWrapper.progress = 0;
+                console.error('Upload failed for', fileWrapper.name, ':', err);
+                completedCount++;
               }
-            },
-            error: (err) => {
-              fileWrapper.status = 'failed';
-              fileWrapper.progress = 0;
-              failedCount++;
-              console.error('Upload failed for', fileWrapper.name, ':', err);
-
-              // Show individual error snackbar immediately
-              const status = err?.status;
-              const msg = status === 401
-                ? `Upload failed: You are not signed in. Please log in and try again.`
-                : status === 413
-                  ? `"${fileWrapper.name}" is too large to upload.`
-                  : `Failed to upload "${fileWrapper.name}". Please try again.`;
-              this.snackbar.error(msg, 5000);
-
-              completedCount++; // count toward total to trigger summary check
-              if (completedCount + failedCount === totalFiles && completedCount > 0) {
-                // Some succeeded — show partial success
-                this.snackbar.info(
-                  `${completedCount - failedCount} of ${totalFiles} files uploaded.`,
-                  4000,
-                );
-              }
-            }
-          });
+            });
+        }
       });
     }
   }
@@ -173,6 +131,10 @@ export class UploadPageComponent {
     this.fileForm.reset({ destination: 'Main Vault' });
     this.uploadedFiles = [];
     this.tags = [];
+  }
+
+  closeNotification(): void {
+    this.showSuccessNotification = false;
   }
 
   private getFileIcon(fileName: string): string {

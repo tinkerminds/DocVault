@@ -6,6 +6,7 @@ import { of, Subject } from 'rxjs';
 import { App } from './app';
 import { DocumentService } from './services/document.service';
 import { MsalService, MsalBroadcastService, MSAL_GUARD_CONFIG } from '@azure/msal-angular';
+import { InteractionType } from '@azure/msal-browser';
 
 // Mock DocumentService so no real HTTP calls are made during tests
 const mockDocumentService = {
@@ -15,30 +16,28 @@ const mockDocumentService = {
   documentUploaded$: new Subject<void>().asObservable(),
 };
 
-// Mock MsalService - simple object without spies for Vitest compatibility
+// Mock MsalService so we don't need a real Azure AD connection in tests
 const mockMsalService = {
   instance: {
     handleRedirectPromise: () => Promise.resolve(null),
-    getActiveAccount: () => null,
     getAllAccounts: () => [],
-    setActiveAccount: (account: any) => {},
+    getActiveAccount: () => null,
+    setActiveAccount: () => {},
   },
-  getAccount: () => null,
-  loginRedirect: (options?: any) => Promise.resolve(null),
-  logoutRedirect: (options?: any) => Promise.resolve(void 0),
+  loginRedirect: () => of(void 0),
+  logout: () => of(void 0),
 };
 
 // Mock MsalBroadcastService
 const mockMsalBroadcastService = {
-  inProgress$: new Subject<any>().asObservable(),
-  authenticationResult$: new Subject<any>().asObservable(),
+  inProgress$: of(0), // InteractionStatus.None = 0
+  msalSubject$: new Subject<void>().asObservable(),
 };
 
-// Mock MSAL_GUARD_CONFIG
+// Mock MSAL Guard config
 const mockMsalGuardConfig = {
-  authRequest: {
-    scopes: [],
-  },
+  interactionType: InteractionType.Redirect,
+  authRequest: { scopes: ['user.read'] },
 };
 
 describe('App', () => {

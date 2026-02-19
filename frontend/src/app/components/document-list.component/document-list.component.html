@@ -5,27 +5,20 @@
   </div>
 
   <div class="table-container">
-
-    <!-- Not authenticated — show login prompt -->
-    <div *ngIf="!isAuthenticated" class="empty-state">
-      <span class="material-symbols-outlined">lock</span>
-      <span>Please <a routerLink="/documents" (click)="false">sign in</a> to view recent documents.</span>
-    </div>
-
-    <!-- Loading state (only shown when authenticated and fetching) -->
-    <div *ngIf="isAuthenticated && isLoading" class="loading-state">
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading-state">
       <span class="material-symbols-outlined spin">progress_activity</span>
       <span>Loading recent documents...</span>
     </div>
 
-    <!-- Empty state (authenticated but no documents) -->
-    <div *ngIf="isAuthenticated && !isLoading && documents.length === 0" class="empty-state">
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
       <span class="material-symbols-outlined">folder_open</span>
       <span>No documents yet. <a routerLink="/upload">Upload one!</a></span>
     </div>
 
     <!-- Documents table -->
-    <table *ngIf="isAuthenticated && !isLoading && documents.length > 0" class="documents-table">
+    <table *ngIf="!isLoading && documents.length > 0" class="documents-table">
       <thead>
         <tr class="table-header">
           <th>Name</th>
@@ -54,6 +47,5 @@
         </tr>
       </tbody>
     </table>
-
   </div>
 </div>
