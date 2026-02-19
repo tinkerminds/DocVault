@@ -13,7 +13,7 @@ export class DocumentService {
   private documentUploadedSubject = new Subject<DocumentResponse>();
   public documentUploaded$ = this.documentUploadedSubject.asObservable();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /**
    * Get all documents for the current user
