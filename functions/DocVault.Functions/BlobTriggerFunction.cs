@@ -58,6 +58,13 @@ public class BlobTriggerFunction
 
         try
         {
+            // ── Buffer the blob stream into memory for reusability ──────────
+            // Blob trigger streams are non-seekable network streams.
+            // PdfPig disposes the stream after use, so we must buffer it first.
+            using var memoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
             // ── Step 1: Determine content type from blob metadata ──────────
             var uploadsContainer = _blobServiceClient.GetBlobContainerClient("uploads");
             var blobClient = uploadsContainer.GetBlobClient(name);
@@ -70,10 +77,8 @@ public class BlobTriggerFunction
             string? excerpt = null;
 
             // ── Step 2: Generate thumbnail ─────────────────────────────────
-            if (fileStream.CanSeek)
-                fileStream.Position = 0;
-
-            var thumbnailStream = await _thumbnailService.GenerateAsync(fileStream, contentType);
+            memoryStream.Position = 0;
+            var thumbnailStream = await _thumbnailService.GenerateAsync(memoryStream, contentType);
 
             if (thumbnailStream != null)
             {
@@ -103,10 +108,8 @@ public class BlobTriggerFunction
             }
 
             // ── Step 3: Extract text for searchable excerpt ────────────────
-            if (fileStream.CanSeek)
-                fileStream.Position = 0;
-
-            excerpt = await _textExtractionService.ExtractAsync(fileStream, contentType);
+            memoryStream.Position = 0;
+            excerpt = await _textExtractionService.ExtractAsync(memoryStream, contentType);
 
             if (excerpt != null)
             {
