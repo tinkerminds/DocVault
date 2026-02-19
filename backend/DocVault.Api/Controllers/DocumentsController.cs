@@ -153,7 +153,10 @@ public class DocumentsController : ControllerBase
             SizeBytes = doc.SizeBytes,
             UploadedAt = doc.UploadedAt,
             Status = doc.Status,
-            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl)
+            DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl),
+            Tags = doc.Tags,
+            Excerpt = doc.Excerpt,
+            ThumbnailUrl = doc.ThumbnailUrl
         };
     }
 }

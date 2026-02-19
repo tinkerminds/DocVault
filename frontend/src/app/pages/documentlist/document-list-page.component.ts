@@ -91,7 +91,7 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
       id: doc.id,
       name: doc.fileName,
       category: this.getCategoryFromContentType(doc.contentType),
-      uploadedBy: 'User', // Placeholder - backend doesn't provide this
+      uploadedBy: 'User',
       uploadDate: this.formatDate(doc.uploadedAt),
       size: this.formatFileSize(doc.sizeBytes),
       icon: this.getFileIcon(fileExt),
@@ -99,6 +99,9 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
       iconColor: colors.icon,
       downloadUrl: doc.downloadUrl,
       status: doc.status,
+      tags: doc.tags || [],
+      excerpt: doc.excerpt || null,
+      thumbnailUrl: doc.thumbnailUrl || null,
     };
   }
 
@@ -177,25 +180,52 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
 
   onSearchChange(): void {
     this.currentPage = 1;
-    this.filterAndPaginate();
+
+    // Use server-side search for queries >= 3 characters
+    if (this.searchQuery.trim().length >= 3) {
+      this.isLoading = true;
+      this.documentService.searchDocuments(this.searchQuery.trim()).subscribe({
+        next: (documents) => {
+          this.filteredDocuments = documents.map((doc) => this.mapToUIDocument(doc));
+          this.totalResults = this.filteredDocuments.length;
+          this.paginate();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Fallback to client-side filter on error
+          this.filterClientSide();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
+    } else {
+      this.filterClientSide();
+    }
   }
 
-  filterAndPaginate(): void {
-    // Filter documents
+  private filterClientSide(): void {
     if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
       this.filteredDocuments = this.allDocuments.filter(
         (doc) =>
-          doc.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          doc.category.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          doc.uploadedBy.toLowerCase().includes(this.searchQuery.toLowerCase()),
+          doc.name.toLowerCase().includes(query) ||
+          doc.category.toLowerCase().includes(query) ||
+          (doc.excerpt && doc.excerpt.toLowerCase().includes(query)) ||
+          doc.tags.some((tag) => tag.toLowerCase().includes(query)),
       );
     } else {
       this.filteredDocuments = [...this.allDocuments];
     }
-
     this.totalResults = this.filteredDocuments.length;
+    this.paginate();
+  }
 
-    // Paginate
+  filterAndPaginate(): void {
+    this.filterClientSide();
+  }
+
+  private paginate(): void {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
     this.paginatedDocuments = this.filteredDocuments.slice(startIndex, endIndex);
