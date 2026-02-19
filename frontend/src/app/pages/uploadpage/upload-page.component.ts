@@ -90,6 +90,7 @@ export class UploadPageComponent {
   uploadAllFiles(): void {
     if (this.fileForm.valid && this.uploadedFiles.length > 0) {
       const tagsString = this.tags.join(',');
+      const description = this.fileForm.get('description')?.value || '';
       let completedCount = 0;
       const totalFiles = this.uploadedFiles.filter(f => f.status === 'ready').length;
 
@@ -98,8 +99,14 @@ export class UploadPageComponent {
           fileWrapper.status = 'uploading';
           fileWrapper.progress = 0;
 
-          this.documentService.uploadDocument(fileWrapper.file, tagsString)
-            .subscribe({
+          this.documentService.uploadDocumentWithProgress(
+            fileWrapper.file,
+            tagsString,
+            description,
+            (percent: number) => {
+              fileWrapper.progress = percent;
+            }
+          ).subscribe({
               next: (response) => {
                 fileWrapper.status = 'completed';
                 fileWrapper.progress = 100;

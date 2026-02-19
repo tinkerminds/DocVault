@@ -34,6 +34,7 @@
             <th class="col-name">Name</th>
             <th class="col-date">Upload Date</th>
             <th class="col-size">Size</th>
+            <th class="col-status">Status</th>
             <th class="col-actions">Actions</th>
           </tr>
         </thead>
@@ -41,7 +42,12 @@
           <tr *ngFor="let doc of paginatedDocuments" class="table-row">
             <td class="cell-name">
               <div class="document-item">
+                <!-- Show thumbnail if available, otherwise show file icon -->
+                <div *ngIf="doc.thumbnailUrl" class="document-thumbnail">
+                  <img [src]="doc.thumbnailUrl" [alt]="doc.name" class="thumbnail-img" />
+                </div>
                 <div
+                  *ngIf="!doc.thumbnailUrl"
                   class="document-icon"
                   [style.backgroundColor]="doc.bgColor"
                   [style.color]="doc.iconColor"
@@ -51,6 +57,10 @@
                 <div class="document-info">
                   <div class="document-name">{{ doc.name }}</div>
                   <div class="document-meta">{{ doc.category }} • Uploaded by {{ doc.uploadedBy }}</div>
+                  <div *ngIf="doc.excerpt" class="document-excerpt">{{ doc.excerpt }}</div>
+                  <div *ngIf="doc.tags && doc.tags.length > 0" class="document-tags">
+                    <span *ngFor="let tag of doc.tags" class="tag-badge">{{ tag }}</span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -59,6 +69,21 @@
             </td>
             <td class="cell-size">
               <span class="size-badge">{{ doc.size }}</span>
+            </td>
+            <td class="cell-status">
+              <span
+                class="status-badge"
+                [ngClass]="{
+                  'status-uploaded': doc.status === 'uploaded',
+                  'status-processed': doc.status === 'processed',
+                  'status-failed': doc.status === 'failed'
+                }"
+              >
+                <span class="material-symbols-outlined status-icon">
+                  {{ doc.status === 'processed' ? 'check_circle' : doc.status === 'failed' ? 'error' : 'schedule' }}
+                </span>
+                {{ doc.status === 'uploaded' ? 'Processing' : doc.status === 'processed' ? 'Ready' : 'Failed' }}
+              </span>
             </td>
             <td class="cell-actions">
               <div class="actions-group">
@@ -77,11 +102,11 @@
                   <span class="material-symbols-outlined">visibility</span>
                 </button>
                 <button
-                  class="action-btn"
-                  title="More"
-                  (click)="moreActions(doc)"
+                  class="action-btn action-btn-delete"
+                  title="Delete"
+                  (click)="confirmDelete(doc)"
                 >
-                  <span class="material-symbols-outlined">more_vert</span>
+                  <span class="material-symbols-outlined">delete</span>
                 </button>
               </div>
             </td>
@@ -126,4 +151,25 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <div *ngIf="showDeleteDialog" class="dialog-overlay" (click)="cancelDelete()">
+    <div class="dialog-box" (click)="$event.stopPropagation()">
+      <div class="dialog-icon">
+        <span class="material-symbols-outlined">warning</span>
+      </div>
+      <h3 class="dialog-title">Delete Document</h3>
+      <p class="dialog-message">
+        Are you sure you want to delete <strong>{{ documentToDelete?.name }}</strong>? This action cannot be undone.
+      </p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" (click)="executeDelete()" [disabled]="isDeleting">
+          <span *ngIf="isDeleting" class="spinner"></span>
+          {{ isDeleting ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </main>
+

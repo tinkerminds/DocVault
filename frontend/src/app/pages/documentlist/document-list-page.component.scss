@@ -161,15 +161,19 @@
         letter-spacing: 0.05em;
 
         &.col-name {
-          width: 40%;
+          width: 35%;
         }
 
         &.col-date {
-          width: 20%;
+          width: 15%;
         }
 
         &.col-size {
-          width: 15%;
+          width: 12%;
+        }
+
+        &.col-status {
+          width: 13%;
         }
 
         &.col-actions {
@@ -217,6 +221,20 @@
                 }
               }
 
+              .document-thumbnail {
+                width: 2.5rem;
+                height: 2.5rem;
+                border-radius: $radius-base;
+                flex-shrink: 0;
+                overflow: hidden;
+
+                .thumbnail-img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                }
+              }
+
               .document-info {
                 display: flex;
                 flex-direction: column;
@@ -238,6 +256,39 @@
                   white-space: nowrap;
                   overflow: hidden;
                   text-overflow: ellipsis;
+                }
+
+                .document-excerpt {
+                  font-size: 0.7rem;
+                  color: $text-secondary;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  display: -webkit-box;
+                  -webkit-line-clamp: 2;
+                  line-clamp: 2;
+                  -webkit-box-orient: vertical;
+                  max-width: 24rem;
+                  line-height: 1.4;
+                  opacity: 0.8;
+                }
+
+                .document-tags {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 0.25rem;
+                  margin-top: 0.125rem;
+
+                  .tag-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0.125rem 0.5rem;
+                    border-radius: 9999px;
+                    background-color: rgba($primary, 0.1);
+                    color: $primary;
+                    font-size: 0.625rem;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                  }
                 }
               }
             }
@@ -296,6 +347,37 @@
                 &:active {
                   transform: scale(0.92);
                 }
+              }
+            }
+          }
+
+          &.cell-status {
+            .status-badge {
+              display: inline-flex;
+              align-items: center;
+              gap: 0.25rem;
+              padding: 0.25rem 0.625rem;
+              border-radius: 9999px;
+              font-size: 0.7rem;
+              font-weight: 600;
+
+              .status-icon {
+                font-size: 14px;
+              }
+
+              &.status-uploaded {
+                background-color: rgb(254, 243, 199);
+                color: rgb(180, 83, 9);
+              }
+
+              &.status-processed {
+                background-color: rgb(220, 252, 231);
+                color: rgb(22, 101, 52);
+              }
+
+              &.status-failed {
+                background-color: rgb(254, 226, 226);
+                color: rgb(185, 28, 28);
               }
             }
           }
@@ -474,4 +556,133 @@
       }
     }
   }
+}
+
+/* Delete button hover */
+.action-btn-delete {
+  &:hover {
+    color: rgb(220, 38, 38) !important;
+    background-color: rgba(220, 38, 38, 0.1) !important;
+  }
+}
+
+/* Delete Confirmation Dialog */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.dialog-box {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 24rem;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s ease;
+
+  .dialog-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: rgb(254, 226, 226);
+    margin-bottom: 1rem;
+
+    .material-symbols-outlined {
+      font-size: 24px;
+      color: rgb(220, 38, 38);
+    }
+  }
+
+  .dialog-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 0.5rem;
+  }
+
+  .dialog-message {
+    font-size: 0.875rem;
+    color: $text-secondary;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+  }
+
+  .dialog-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+
+    .dialog-btn {
+      padding: 0.625rem 1.5rem;
+      border-radius: $radius-lg;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &-cancel {
+        background-color: $surface-light;
+        color: $text-primary;
+        border: 1px solid $border-light;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+      }
+
+      &-confirm {
+        background-color: rgb(220, 38, 38);
+        color: white;
+
+        &:hover:not(:disabled) {
+          background-color: rgb(185, 28, 28);
+        }
+
+        &:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
