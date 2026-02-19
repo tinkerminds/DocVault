@@ -25,6 +25,9 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
   paginatedDocuments: DocumentUI[] = [];
   isLoading: boolean = false;
   errorMessage: string = '';
+  showDeleteDialog: boolean = false;
+  documentToDelete: DocumentUI | null = null;
+  isDeleting: boolean = false;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -102,6 +105,7 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
       tags: doc.tags || [],
       excerpt: doc.excerpt || null,
       thumbnailUrl: doc.thumbnailUrl || null,
+      description: doc.description || null,
     };
   }
 
@@ -278,7 +282,44 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  moreActions(doc: DocumentUI): void {
-    console.log('More actions for:', doc.name);
+  confirmDelete(doc: DocumentUI): void {
+    this.documentToDelete = doc;
+    this.showDeleteDialog = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteDialog = false;
+    this.documentToDelete = null;
+  }
+
+  executeDelete(): void {
+    if (!this.documentToDelete) return;
+
+    this.isDeleting = true;
+    const docId = this.documentToDelete.id;
+    const docName = this.documentToDelete.name;
+
+    this.documentService.deleteDocument(docId).subscribe({
+      next: () => {
+        console.log('Document deleted successfully:', docName);
+        // Remove from local arrays
+        this.allDocuments = this.allDocuments.filter((d) => d.id !== docId);
+        this.totalResults = this.allDocuments.length;
+        this.filterAndPaginate();
+        this.showDeleteDialog = false;
+        this.documentToDelete = null;
+        this.isDeleting = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error deleting document:', error);
+        this.errorMessage = `Failed to delete "${docName}". Please try again.`;
+        this.showDeleteDialog = false;
+        this.documentToDelete = null;
+        this.isDeleting = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 }
+

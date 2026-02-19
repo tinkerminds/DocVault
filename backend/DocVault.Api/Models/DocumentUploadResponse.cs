@@ -12,4 +12,5 @@ public class DocumentUploadResponse
     public List<string> Tags { get; set; } = new();
     public string? Excerpt { get; set; }
     public string? ThumbnailUrl { get; set; }
+    public string? Description { get; set; }
 }

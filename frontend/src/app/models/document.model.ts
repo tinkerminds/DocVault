@@ -13,6 +13,7 @@ export interface DocumentResponse {
     tags: string[];
     excerpt: string | null;
     thumbnailUrl: string | null;
+    description: string | null;
 }
 
 /**
@@ -33,4 +34,5 @@ export interface DocumentUI {
     tags: string[];
     excerpt: string | null;
     thumbnailUrl: string | null;
+    description: string | null;
 }

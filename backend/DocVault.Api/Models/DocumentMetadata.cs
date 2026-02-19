@@ -34,6 +34,9 @@ public class DocumentMetadata
     [JsonProperty("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
 
+    [JsonProperty("description")]
+    public string? Description { get; set; }
+
     [JsonProperty("status")]
     public string Status { get; set; } = "pending";
 }
