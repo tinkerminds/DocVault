@@ -30,7 +30,7 @@ public class DocumentsController : ControllerBase
     /// POST /api/documents
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<DocumentUploadResponse>> Upload(IFormFile file, [FromForm] string? tags)
+    public async Task<ActionResult<DocumentUploadResponse>> Upload(IFormFile file, [FromForm] string? tags, [FromForm] string? description)
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file provided.");
@@ -50,6 +50,7 @@ public class DocumentsController : ControllerBase
             Tags = string.IsNullOrWhiteSpace(tags)
                 ? new List<string>()
                 : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+            Description = description,
             Status = "pending"
         };
 
@@ -156,7 +157,10 @@ public class DocumentsController : ControllerBase
             DownloadUrl = _blobService.GetSasDownloadUrl(doc.BlobUrl),
             Tags = doc.Tags,
             Excerpt = doc.Excerpt,
-            ThumbnailUrl = doc.ThumbnailUrl
+            ThumbnailUrl = string.IsNullOrEmpty(doc.ThumbnailUrl)
+                ? null
+                : _blobService.GetSasDownloadUrl(doc.ThumbnailUrl),
+            Description = doc.Description
         };
     }
 }

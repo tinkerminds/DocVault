@@ -557,3 +557,132 @@
     }
   }
 }
+
+/* Delete button hover */
+.action-btn-delete {
+  &:hover {
+    color: rgb(220, 38, 38) !important;
+    background-color: rgba(220, 38, 38, 0.1) !important;
+  }
+}
+
+/* Delete Confirmation Dialog */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.dialog-box {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 24rem;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s ease;
+
+  .dialog-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: rgb(254, 226, 226);
+    margin-bottom: 1rem;
+
+    .material-symbols-outlined {
+      font-size: 24px;
+      color: rgb(220, 38, 38);
+    }
+  }
+
+  .dialog-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 0.5rem;
+  }
+
+  .dialog-message {
+    font-size: 0.875rem;
+    color: $text-secondary;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+  }
+
+  .dialog-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+
+    .dialog-btn {
+      padding: 0.625rem 1.5rem;
+      border-radius: $radius-lg;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &-cancel {
+        background-color: $surface-light;
+        color: $text-primary;
+        border: 1px solid $border-light;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+      }
+
+      &-confirm {
+        background-color: rgb(220, 38, 38);
+        color: white;
+
+        &:hover:not(:disabled) {
+          background-color: rgb(185, 28, 28);
+        }
+
+        &:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
