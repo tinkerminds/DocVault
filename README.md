@@ -13,7 +13,7 @@ DocVault is a document management app where employees can upload, search, and do
 | Resource                 | Link                                                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
 | **Working App**          | [yellow-river-03038cf00.4.azurestaticapps.net](https://yellow-river-03038cf00.4.azurestaticapps.net/) |
-| **Backend API**          | [docvault-api-dev.azurewebsites.net](https://docvault-api-dev.azurewebsites.net)                      |
+| **Backend API**          | [docvault-api-dev.azurewebsites.net](https://docvault-api-dev.azurewebsites.net/api/health)                      |
 | **Architecture Diagram** | [View on Eraser](https://app.eraser.io/workspace/fnLL7kZHXVIuqJpjEpO4)                                |
 
 ---
