@@ -2,9 +2,19 @@
 
 **Secure Document Management Platform** — AZ-204 Capstone Project
 
-DocVault is a document management app where employees can upload, search, and download files. We built it using Angular for the frontend and .NET 8 for the backend, and connected it with a bunch of Azure services to learn how they all work together in a real project.
+DocVault is a document management app where employees can upload, search, and download files. Built with Angular for the frontend and .NET 8 for the backend, connected with Azure services to demonstrate real-world cloud architecture.
 
-> This is a team project by freshers who just completed AZ-204 training. The focus is on wiring Azure services together and understanding why each one exists — not on making a pixel-perfect UI.
+> Built by freshers at TinkerMinds as part of AZ-204 capstone training.
+
+---
+
+## 🔗 Live Links
+
+| Resource                 | Link                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| **Working App**          | [yellow-river-03038cf00.4.azurestaticapps.net](https://yellow-river-03038cf00.4.azurestaticapps.net/) |
+| **Backend API**          | [docvault-api-dev.azurewebsites.net](https://docvault-api-dev.azurewebsites.net)                      |
+| **Architecture Diagram** | [View on Eraser](https://app.eraser.io/workspace/fnLL7kZHXVIuqJpjEpO4)                                |
 
 ---
 
@@ -33,7 +43,50 @@ DocVault/
 
 ---
 
+## Azure Services Used
+
+| Service              | Purpose                                                              |
+| -------------------- | -------------------------------------------------------------------- |
+| App Service          | Host the .NET API                                                    |
+| Static Web Apps      | Host the Angular SPA                                                 |
+| Blob Storage         | Store uploaded documents + thumbnails                                |
+| Cosmos DB            | Store document metadata, tags, audit logs                            |
+| Azure Functions      | Blob-triggered thumbnail generation + text extraction                |
+| Microsoft Entra ID   | User login via MSAL, API protected with JWT tokens                   |
+| Key Vault            | Store all connection strings and secrets securely                    |
+| Managed Identity     | Let App Service + Functions access Key Vault without secrets in code |
+| Event Grid           | Publish DocumentUploaded event, decouple upload from processing      |
+| Service Bus          | Queue processing jobs for reliable background work                   |
+| API Management       | Rate-limiting, CORS, caching policies in front of the API            |
+| Application Insights | Telemetry, custom metrics, availability tests                        |
+
+---
+
+## API Endpoints
+
+| Method | Route                      | Description                              |
+| ------ | -------------------------- | ---------------------------------------- |
+| POST   | `/api/documents`           | Upload a file (multipart/form-data)      |
+| GET    | `/api/documents`           | List current user's documents            |
+| GET    | `/api/documents/{id}`      | Get document metadata + SAS download URL |
+| DELETE | `/api/documents/{id}`      | Soft-delete a document                   |
+| GET    | `/api/documents/search?q=` | Search documents by text content         |
+| GET    | `/api/health`              | Health check                             |
+
+---
+
 ## How to Run Locally
+
+### Prerequisites
+
+| Tool        | Version |
+| ----------- | ------- |
+| Node.js     | 20+     |
+| Angular CLI | 19+     |
+| .NET SDK    | 8.0+    |
+| Azure CLI   | 2.50+   |
+
+### Steps
 
 ```bash
 # clone the repo
@@ -55,155 +108,14 @@ dotnet run
 
 ---
 
-## Git Branching Strategy
-
-We follow a strict branching model. **No one pushes directly to `main` or `dev` — everything goes through Pull Requests.**
-
-```
-feature/upload-api  ──PR──►  dev  ──PR (end of day)──►  main  ──auto──►  Azure
-feature/auth        ──PR──┘                                              🚀
-feature/thumbnails  ──PR──┘
-```
-
-| Branch      | What it's for                                    | Rules                                                |
-| ----------- | ------------------------------------------------ | ---------------------------------------------------- |
-| `main`      | Production code, auto-deploys to Azure           | Protected — no direct pushes, PRs only, CI must pass |
-| `dev`       | Integration branch where we test things together | Protected — no direct pushes, PRs only, CI must pass |
-| `feature/*` | One branch per task (not per person)             | Branch off `dev`, merge back to `dev` via PR         |
-
-### Why we do it this way
-
-- **No direct pushes** = every change gets reviewed by at least one teammate before merging
-- **CI runs on every PR** = if the build breaks, we catch it before it gets merged
-- **`dev` → `main` only when stable** = main always has working code that can deploy
-
----
-
 ## CI/CD Pipeline
 
-We have two GitHub Actions workflows set up:
+Two GitHub Actions workflows are configured:
 
-### `ci.yml` — Runs on every PR to `dev` and `main`
+- **`ci.yml`** — Runs on every PR to `dev` and `main`. Builds and tests both frontend and backend. If CI fails, the PR cannot be merged.
+- **`deploy.yml`** — Runs when code lands on `main`. Deploys the .NET API to Azure App Service and the Angular app to Azure Static Web Apps.
 
-What it does:
-
-1. Checks out the code
-2. Builds and tests the .NET API (`dotnet restore` → `build`)
-3. Builds and tests the Angular app (`npm ci` → `build` → `test`)
-4. Reports pass/fail status back to the PR
-
-**If CI fails, the PR cannot be merged.** We fix the issue on our feature branch first.
-
-### `deploy.yml` — Runs when code lands on `main`
-
-What it does:
-
-1. Runs all CI checks again (frontend + backend build & test)
-2. Publishes the .NET API and deploys it to **Azure App Service**
-3. Builds the Angular app for production and deploys to **Azure Static Web Apps**
-
-Credentials are stored as **GitHub Secrets** — we never hardcode any Azure keys or publish profiles in the code.
-
----
-
-## Commit Convention
-
-We use this format: `type(scope): description`
-
-```
-feat(api): add upload endpoint with blob storage
-fix(auth): correct MSAL redirect URI
-chore(infra): add Key Vault resource to setup script
-ci(deploy): add Azure App Service deployment step
-docs(readme): update branching strategy section
-```
-
-| Type       | When to use                       |
-| ---------- | --------------------------------- |
-| `feat`     | New feature                       |
-| `fix`      | Bug fix                           |
-| `docs`     | Documentation changes             |
-| `chore`    | Config, dependencies, maintenance |
-| `ci`       | CI/CD pipeline changes            |
-| `refactor` | Code cleanup (no behavior change) |
-| `test`     | Adding or updating tests          |
-
----
-
-## PR Rules
-
-Every change — even small ones — goes through a Pull Request. Here's what we follow:
-
-1. **At least one teammate must review and approve** before merging
-2. **PR description must answer**: What does this change? Which Azure service does it touch? How to test it?
-3. **Keep PRs small** — if a feature is big, split it (e.g., API first, then UI, then wiring)
-4. **Fix merge conflicts on your branch**, never on `dev` or `main`
-5. **If CI is red, fix it immediately** — a broken pipeline blocks everyone
-
----
-
-## Azure Services We Used (and Why)
-
-| Service              | Why we used it                                                           | Day     |
-| -------------------- | ------------------------------------------------------------------------ | ------- |
-| App Service          | Host the .NET API                                                        | Day 1-2 |
-| Static Web Apps      | Host the Angular SPA                                                     | Day 1-2 |
-| Blob Storage         | Store uploaded documents + thumbnails                                    | Day 1   |
-| Cosmos DB            | Store document metadata, tags, audit logs                                | Day 1   |
-| SAS Tokens           | Time-limited download links (not direct blob URLs)                       | Day 1   |
-| Lifecycle Policy     | Auto-move old docs to Cool (30d) / Archive (180d) storage                | Day 1   |
-| Azure Functions      | Blob-triggered thumbnail generation + text extraction                    | Day 2   |
-| Microsoft Entra ID   | User login via MSAL, API protected with JWT tokens                       | Day 2   |
-| Key Vault            | Store all connection strings and secrets securely                        | Day 2   |
-| Managed Identity     | Let App Service + Functions access Key Vault without any secrets in code | Day 2   |
-| Event Grid           | Publish DocumentUploaded event, decouple upload from processing          | Day 3   |
-| Service Bus          | Queue processing jobs for reliable background work                       | Day 3   |
-| API Management       | Rate-limiting, CORS, caching policies in front of the API                | Day 3   |
-| Application Insights | Telemetry, custom metrics, availability tests                            | Day 3   |
-| Container Registry   | Store Docker images                                                      | Day 4   |
-| Container Apps       | Deploy containerized API with scale-to-zero                              | Day 4   |
-
----
-
-## API Endpoints
-
-| Method | Route                      | What it does                                          |
-| ------ | -------------------------- | ----------------------------------------------------- |
-| POST   | `/api/documents`           | Upload a file (multipart/form-data)                   |
-| GET    | `/api/documents`           | List current user's documents                         |
-| GET    | `/api/documents/{id}`      | Get document metadata + SAS download URL              |
-| DELETE | `/api/documents/{id}`      | Soft-delete a document                                |
-| GET    | `/api/documents/search?q=` | Search documents by text content                      |
-| GET    | `/api/health`              | Health check (used by App Insights availability test) |
-
----
-
-## 4-Day Sprint Plan
-
-| Day   | Focus                     | What we deliver                                                     |
-| ----- | ------------------------- | ------------------------------------------------------------------- |
-| Day 1 | Foundation & Storage      | Upload/download works, Blob + Cosmos DB, CI/CD pipeline is green    |
-| Day 2 | Security & Serverless     | Entra ID login, Key Vault secrets, Functions auto-process uploads   |
-| Day 3 | Events & Observability    | Event Grid, Service Bus, APIM policies, App Insights telemetry      |
-| Day 4 | Containers, Polish & Demo | Docker + Container Apps, dashboard, architecture diagram, team demo |
-
----
-
-## Prerequisites
-
-| Tool        | Version |
-| ----------- | ------- |
-| Node.js     | 20+     |
-| Angular CLI | 19+     |
-| .NET SDK    | 8.0+    |
-| Azure CLI   | 2.50+   |
-| Git         | 2.40+   |
-
----
-
-## Team
-
-Built by freshers at TinkerMinds as part of AZ-204 capstone training.
+All credentials are stored as **GitHub Secrets** — nothing is hardcoded.
 
 ---
 
