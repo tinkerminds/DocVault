@@ -89,6 +89,7 @@ builder.Services.AddHttpClient("AppInsights", client =>
 });
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+
 // ---------- App Pipeline ----------
 
 var app = builder.Build();

@@ -115,3 +115,30 @@ jobs:
           app-name: docvault-api-dev
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: backend/DocVault.Api/publish
+
+  # ──────────────────────────────────────────────
+  # Deploy Function App to Azure
+  # ──────────────────────────────────────────────
+  deploy-functions:
+    name: Deploy Functions
+    needs: backend-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish Functions
+        run: dotnet publish -c Release -o ./publish
+        working-directory: functions/DocVault.Functions
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure Function App
+        run: |
+          cd functions/DocVault.Functions/publish
+          zip -r ../func-deploy.zip .
+          az functionapp deploy --name docvault-func-dev --resource-group docvault-rg --src-path ../func-deploy.zip --type zip
