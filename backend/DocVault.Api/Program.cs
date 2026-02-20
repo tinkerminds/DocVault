@@ -70,24 +70,25 @@ builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 
 // Azure Event Grid
-builder.Services.AddSingleton<EventGridPublisherClient>(sp =>
+var egEndpoint = builder.Configuration["EventGrid:TopicEndpoint"];
+var egKey = builder.Configuration["EventGrid:TopicKey"];
+if (!string.IsNullOrEmpty(egEndpoint) && !string.IsNullOrEmpty(egKey))
 {
-    var endpoint = builder.Configuration["EventGrid:TopicEndpoint"];
-    var key = builder.Configuration["EventGrid:TopicKey"];
-    if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
-        throw new InvalidOperationException("EventGrid TopicEndpoint or TopicKey is not configured.");
-    return new EventGridPublisherClient(new Uri(endpoint), new Azure.AzureKeyCredential(key));
-});
-builder.Services.AddSingleton<IEventGridService, EventGridService>();
+    builder.Services.AddSingleton(new EventGridPublisherClient(
+        new Uri(egEndpoint), new Azure.AzureKeyCredential(egKey)));
+    builder.Services.AddSingleton<IEventGridService, EventGridService>();
+}
+else
+{
+    builder.Services.AddSingleton<IEventGridService, NoOpEventGridService>();
+}
 
-// Azure Service Bus — queue messages for background processing
-builder.Services.AddSingleton<ServiceBusClient>(sp =>
+// Azure Service Bus
+var sbConnectionString = builder.Configuration["ServiceBus:ConnectionString"];
+if (!string.IsNullOrEmpty(sbConnectionString))
 {
-    var connectionString = builder.Configuration["ServiceBus:ConnectionString"];
-    if (string.IsNullOrEmpty(connectionString))
-        throw new InvalidOperationException("ServiceBus connection string is not configured.");
-    return new ServiceBusClient(connectionString);
-});
+    builder.Services.AddSingleton(new ServiceBusClient(sbConnectionString));
+}
 
 // Application Insights Analytics Service
 // Uses a named HttpClient to query the App Insights REST API.
