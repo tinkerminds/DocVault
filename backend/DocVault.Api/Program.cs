@@ -3,6 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Azure.Storage.Blobs;
 using Azure.Identity;
 using Microsoft.Identity.Web;
+using Azure.Messaging.EventGrid;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,8 +67,28 @@ builder.Services.AddSingleton<BlobServiceClient>(sp =>
 });
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
-// Azure Event Grid — publish document events
+
+// Azure Event Grid
+builder.Services.AddSingleton<EventGridPublisherClient>(sp =>
+{
+    var endpoint = builder.Configuration["EventGrid:TopicEndpoint"];
+    var key = builder.Configuration["EventGrid:TopicKey"];
+    if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
+        throw new InvalidOperationException("EventGrid TopicEndpoint or TopicKey is not configured.");
+    return new EventGridPublisherClient(new Uri(endpoint), new Azure.AzureKeyCredential(key));
+});
 builder.Services.AddSingleton<IEventGridService, EventGridService>();
+
+// Application Insights Analytics Service
+// Uses a named HttpClient to query the App Insights REST API.
+// The App ID and API Key are read from config (Key Vault in production).
+builder.Services.AddHttpClient("AppInsights", client =>
+{
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
 
 // ---------- App Pipeline ----------
 

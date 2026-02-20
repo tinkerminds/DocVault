@@ -1,0 +1,108 @@
+<div class="dashboard-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <span class="material-symbols-outlined">monitoring</span>
+      </div>
+      <div>
+        <h1 class="page-title">Platform Dashboard</h1>
+        <p class="page-subtitle">Live metrics powered by Application Insights</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="loadAnalytics()" [disabled]="isLoading" title="Refresh metrics">
+        <span class="material-symbols-outlined" [class.spin]="isLoading">refresh</span>
+        <span>{{ isLoading ? 'Refreshing…' : 'Refresh' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Error State ───────────────────────────────────────────────────── -->
+  <div class="error-banner" *ngIf="hasError && !isLoading">
+    <span class="material-symbols-outlined">error_outline</span>
+    <div>
+      <strong>Could not load analytics data.</strong>
+      <p>Make sure the API is running and Application Insights is configured.</p>
+    </div>
+    <button class="btn-retry" (click)="loadAnalytics()">Try again</button>
+  </div>
+
+  <!-- ── Metric Cards ──────────────────────────────────────────────────── -->
+  <div class="cards-grid">
+
+    <!-- Skeleton cards while loading -->
+    <ng-container *ngIf="isLoading">
+      <div class="metric-card skeleton" *ngFor="let _ of [0,1,2,3]">
+        <div class="skeleton-icon"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton-line wide"></div>
+          <div class="skeleton-line narrow"></div>
+          <div class="skeleton-line mid"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Real cards -->
+    <ng-container *ngIf="!isLoading">
+      <div class="metric-card" *ngFor="let card of cards">
+        <div class="card-icon-wrapper">
+          <span class="material-symbols-outlined card-icon {{ card.iconColorClass }}">{{ card.icon }}</span>
+        </div>
+        <div class="card-body">
+          <span class="card-value">{{ card.value }}</span>
+          <span class="card-label">{{ card.label }}</span>
+          <span class="card-description">{{ card.description }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- ── Info Panel ────────────────────────────────────────────────────── -->
+  <div class="info-section" *ngIf="!isLoading">
+    <div class="info-card">
+      <div class="info-header">
+        <span class="material-symbols-outlined">info</span>
+        <h2>How this works</h2>
+      </div>
+      <div class="info-body">
+        <div class="info-row">
+          <span class="material-symbols-outlined info-icon">cloud_upload</span>
+          <div>
+            <strong>Total Uploads</strong>
+            <p>Counts successful <code>POST /api/documents</code> requests logged in Application Insights over the last 30 days.</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="material-symbols-outlined info-icon">timer</span>
+          <div>
+            <strong>Avg Processing Time</strong>
+            <p>Average end-to-end duration of upload requests over the last 7 days. Includes Blob Storage write and Cosmos DB insert.</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="material-symbols-outlined info-icon">warning</span>
+          <div>
+            <strong>Error Rate</strong>
+            <p>Percentage of all API requests that returned HTTP 4xx or 5xx. Values above 5% are highlighted in red.</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="material-symbols-outlined info-icon">group</span>
+          <div>
+            <strong>Active Users</strong>
+            <p>Distinct authenticated users (by Entra ID object ID) who made at least one request over the last 7 days.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timestamp -->
+    <div class="generated-at" *ngIf="generatedAt">
+      <span class="material-symbols-outlined">schedule</span>
+      Data as of {{ generatedAt }}
+    </div>
+  </div>
+
+</div>

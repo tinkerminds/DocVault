@@ -109,4 +109,58 @@ public class CosmosDbService : ICosmosDbService
         _logger.LogInformation("Search for '{SearchTerm}' returned {Count} results", searchTerm, results.Count);
         return results;
     }
+
+    /// <summary>
+    /// Counts all non-deleted documents across all partitions (all users).
+    /// Uses a cross-partition aggregate query for efficiency — no need to
+    /// materialise every document.
+    /// </summary>
+    public async Task<int> GetTotalDocumentCountAsync()
+    {
+        var query = new QueryDefinition(
+            "SELECT VALUE COUNT(1) FROM c WHERE c.status != 'deleted'");
+
+        var iterator = _container.GetItemQueryIterator<int>(
+            query,
+            requestOptions: new QueryRequestOptions { MaxItemCount = 1 });
+
+        int total = 0;
+        while (iterator.HasMoreResults)
+        {
+            var response = await iterator.ReadNextAsync();
+            foreach (var value in response)
+                total += value;
+        }
+
+        _logger.LogInformation("Total document count (cross-partition): {Count}", total);
+        return total;
+    }
+
+    /// <summary>
+    /// Counts distinct userId values across all non-deleted documents.
+    /// This is a cross-partition query that runs against all partitions.
+    /// </summary>
+    public async Task<int> GetDistinctUserCountAsync()
+    {
+        // Cosmos DB does not support COUNT(DISTINCT ...) in a single query,
+        // so we fetch all distinct userIds and count them in memory.
+        // This is efficient because we only SELECT the userId field.
+        var query = new QueryDefinition(
+            "SELECT DISTINCT VALUE c.userId FROM c WHERE c.status != 'deleted'");
+
+        var iterator = _container.GetItemQueryIterator<string>(query);
+
+        var userIds = new HashSet<string>();
+        while (iterator.HasMoreResults)
+        {
+            var response = await iterator.ReadNextAsync();
+            foreach (var uid in response)
+                if (!string.IsNullOrEmpty(uid))
+                    userIds.Add(uid);
+        }
+
+        _logger.LogInformation("Distinct user count: {Count}", userIds.Count);
+        return userIds.Count;
+    }
 }
+
