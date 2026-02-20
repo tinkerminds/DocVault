@@ -13,15 +13,18 @@ public class DocumentsController : ControllerBase
 {
     private readonly IBlobStorageService _blobService;
     private readonly ICosmosDbService _cosmosService;
+    private readonly IEventGridService _eventGridService;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IBlobStorageService blobService,
         ICosmosDbService cosmosService,
+        IEventGridService eventGridService,
         ILogger<DocumentsController> logger)
     {
         _blobService = blobService;
         _cosmosService = cosmosService;
+        _eventGridService = eventGridService;
         _logger = logger;
     }
 
@@ -59,6 +62,16 @@ public class DocumentsController : ControllerBase
         var response = MapToResponse(created);
 
         _logger.LogInformation("Document {DocumentId} uploaded by user {UserId}", created.Id, userId);
+
+        // Publish DocumentUploaded event to Event Grid (non-fatal)
+        try
+        {
+            await _eventGridService.PublishDocumentUploadedEventAsync(created);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish Event Grid event for document {DocumentId}. Upload succeeded but event-driven processing may not trigger.", created.Id);
+        }
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);
     }
