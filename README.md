@@ -16,6 +16,19 @@ DocVault is a document management app where employees can upload, search, and do
 | **Backend API**          | [docvault-api-dev.azurewebsites.net](https://docvault-api-dev.azurewebsites.net/api/health)                      |
 | **Architecture Diagram** | [View on Eraser](https://app.eraser.io/workspace/fnLL7kZHXVIuqJpjEpO4)                                |
 
+
+## 🔐 Test Credentials
+
+Use the following credentials to log in and explore the app:
+
+| Field        | Value                         |
+| ------------ | ----------------------------- |
+| **Email**    | `ganeshjadhavar2003@gmail.com`|
+| **Password** | `Laymarts@krishna916`         |
+
+> [!NOTE]
+> These are demo credentials for testing purposes only.
+
 ---
 
 ## Tech Stack
