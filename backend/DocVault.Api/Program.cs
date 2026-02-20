@@ -27,16 +27,18 @@ builder.Services.AddSwaggerGen();
 // Microsoft Entra ID (Azure AD) JWT Bearer authentication
 builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 
-// CORS — allow Angular dev server
+// CORS — allow Angular dev server (any localhost port) + deployed frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4200",   // Angular dev server
-                "http://localhost:5173",   // Vite dev server (if used)
-                "https://yellow-river-03038cf00.4.azurestaticapps.net"  // Azure Static Web App
-            )
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                var uri = new Uri(origin);
+                return uri.Host == "localhost" ||  // any localhost port
+                       origin == "https://yellow-river-03038cf00.4.azurestaticapps.net";
+            })
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
