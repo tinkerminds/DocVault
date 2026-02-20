@@ -117,7 +117,7 @@
               <span
                 class="status-badge"
                 [ngClass]="{
-                  'status-uploaded': doc.status === 'uploaded',
+                  'status-uploaded': doc.status === 'uploaded' || doc.status === 'pending',
                   'status-processed': doc.status === 'processed',
                   'status-failed': doc.status === 'failed'
                 }"
@@ -125,7 +125,7 @@
                 <span class="material-symbols-outlined status-icon">
                   {{ doc.status === 'processed' ? 'check_circle' : doc.status === 'failed' ? 'error' : 'schedule' }}
                 </span>
-                {{ doc.status === 'uploaded' ? 'Processing' : doc.status === 'processed' ? 'Ready' : 'Failed' }}
+                {{ doc.status === 'pending' || doc.status === 'uploaded' ? 'Processing' : doc.status === 'processed' ? 'Ready' : 'Failed' }}
               </span>
             </td>
             <td class="cell-actions">

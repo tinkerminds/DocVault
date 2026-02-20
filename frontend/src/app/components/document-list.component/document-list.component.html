@@ -5,14 +5,20 @@
   </div>
 
   <div class="table-container">
+    <!-- Not signed in state -->
+    <div *ngIf="!isLoggedIn" class="sign-in-state">
+      <span class="material-symbols-outlined">lock</span>
+      <span>Sign in to view your recent documents</span>
+    </div>
+
     <!-- Loading state -->
-    <div *ngIf="isLoading" class="loading-state">
+    <div *ngIf="isLoggedIn && isLoading" class="loading-state">
       <span class="material-symbols-outlined spin">progress_activity</span>
       <span>Loading recent documents...</span>
     </div>
 
     <!-- Empty state -->
-    <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
+    <div *ngIf="isLoggedIn && !isLoading && documents.length === 0" class="empty-state">
       <span class="material-symbols-outlined">folder_open</span>
       <span>No documents yet. <a routerLink="/upload">Upload one!</a></span>
     </div>
