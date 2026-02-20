@@ -3,8 +3,6 @@ using DocVault.Api.Models;
 using DocVault.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Azure.Messaging.ServiceBus;
-using System.Text.Json;
 
 namespace DocVault.Api.Controllers;
 
@@ -15,19 +13,19 @@ public class DocumentsController : ControllerBase
 {
     private readonly IBlobStorageService _blobService;
     private readonly ICosmosDbService _cosmosService;
+    private readonly IEventGridService _eventGridService;
     private readonly ILogger<DocumentsController> _logger;
-    private readonly ServiceBusClient _serviceBusClient;
 
     public DocumentsController(
         IBlobStorageService blobService,
         ICosmosDbService cosmosService,
-        ILogger<DocumentsController> logger,
-        ServiceBusClient serviceBusClient)
+        IEventGridService eventGridService,
+        ILogger<DocumentsController> logger)
     {
         _blobService = blobService;
         _cosmosService = cosmosService;
+        _eventGridService = eventGridService;
         _logger = logger;
-        _serviceBusClient = serviceBusClient;
     }
 
     /// <summary>
@@ -61,28 +59,19 @@ public class DocumentsController : ControllerBase
 
         var created = await _cosmosService.AddDocumentAsync(document);
 
-        // Send message to Service Bus queue for background processing
-        var sender = _serviceBusClient.CreateSender("document-processing");
-
-        var messageBody = new
-        {
-            documentId = created.Id,
-            userId = created.UserId,
-            blobUrl = created.BlobUrl,
-            fileName = created.FileName
-        };
-
-        var message = new ServiceBusMessage(
-            JsonSerializer.Serialize(messageBody));
-
-        await sender.SendMessageAsync(message);
-
-        _logger.LogInformation("Message sent to Service Bus for document {DocumentId}", created.Id);
-
-
         var response = MapToResponse(created);
 
         _logger.LogInformation("Document {DocumentId} uploaded by user {UserId}", created.Id, userId);
+
+        // Publish DocumentUploaded event to Event Grid (non-fatal)
+        try
+        {
+            await _eventGridService.PublishDocumentUploadedEventAsync(created);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish Event Grid event for document {DocumentId}. Upload succeeded but event-driven processing may not trigger.", created.Id);
+        }
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);
     }

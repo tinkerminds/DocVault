@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Azure.Storage.Blobs;
 using Azure.Identity;
 using Microsoft.Identity.Web;
-using Azure.Messaging.ServiceBus;
+using Azure.Messaging.EventGrid;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,14 +68,16 @@ builder.Services.AddSingleton<BlobServiceClient>(sp =>
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 
-// Azure Service Bus
-builder.Services.AddSingleton<ServiceBusClient>(sp =>
+// Azure Event Grid
+builder.Services.AddSingleton<EventGridPublisherClient>(sp =>
 {
-    var connectionString = builder.Configuration["ServiceBus:ConnectionString"]
-        ?? throw new InvalidOperationException("ServiceBus connection string is not configured.");
-
-    return new ServiceBusClient(connectionString);
+    var endpoint = builder.Configuration["EventGrid:TopicEndpoint"];
+    var key = builder.Configuration["EventGrid:TopicKey"];
+    if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
+        throw new InvalidOperationException("EventGrid TopicEndpoint or TopicKey is not configured.");
+    return new EventGridPublisherClient(new Uri(endpoint), new Azure.AzureKeyCredential(key));
 });
+builder.Services.AddSingleton<IEventGridService, EventGridService>();
 
 // Application Insights Analytics Service
 // Uses a named HttpClient to query the App Insights REST API.
