@@ -3,6 +3,8 @@ using DocVault.Api.Models;
 using DocVault.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Azure.Messaging.ServiceBus;
+using System.Text.Json;
 
 namespace DocVault.Api.Controllers;
 
@@ -14,17 +16,20 @@ public class DocumentsController : ControllerBase
     private readonly IBlobStorageService _blobService;
     private readonly ICosmosDbService _cosmosService;
     private readonly IEventGridService _eventGridService;
+    private readonly ServiceBusClient _serviceBusClient;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IBlobStorageService blobService,
         ICosmosDbService cosmosService,
         IEventGridService eventGridService,
+        ServiceBusClient serviceBusClient,
         ILogger<DocumentsController> logger)
     {
         _blobService = blobService;
         _cosmosService = cosmosService;
         _eventGridService = eventGridService;
+        _serviceBusClient = serviceBusClient;
         _logger = logger;
     }
 
@@ -71,6 +76,26 @@ public class DocumentsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to publish Event Grid event for document {DocumentId}. Upload succeeded but event-driven processing may not trigger.", created.Id);
+        }
+
+        // Send message to Service Bus queue for background processing (non-fatal)
+        try
+        {
+            await using var sender = _serviceBusClient.CreateSender("document-processing");
+            var messagePayload = JsonSerializer.Serialize(new
+            {
+                DocumentId = created.Id,
+                UserId = created.UserId,
+                BlobUrl = created.BlobUrl,
+                FileName = created.FileName,
+                ContentType = created.ContentType
+            });
+            await sender.SendMessageAsync(new ServiceBusMessage(messagePayload));
+            _logger.LogInformation("Message sent to Service Bus queue for document {DocumentId}", created.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send Service Bus message for document {DocumentId}. Upload succeeded.", created.Id);
         }
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);

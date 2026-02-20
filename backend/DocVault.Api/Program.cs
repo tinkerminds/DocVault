@@ -4,6 +4,7 @@ using Azure.Storage.Blobs;
 using Azure.Identity;
 using Microsoft.Identity.Web;
 using Azure.Messaging.EventGrid;
+using Azure.Messaging.ServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,15 +70,25 @@ builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 
 // Azure Event Grid
-builder.Services.AddSingleton<EventGridPublisherClient>(sp =>
+var egEndpoint = builder.Configuration["EventGrid:TopicEndpoint"];
+var egKey = builder.Configuration["EventGrid:TopicKey"];
+if (!string.IsNullOrEmpty(egEndpoint) && !string.IsNullOrEmpty(egKey))
 {
-    var endpoint = builder.Configuration["EventGrid:TopicEndpoint"];
-    var key = builder.Configuration["EventGrid:TopicKey"];
-    if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
-        throw new InvalidOperationException("EventGrid TopicEndpoint or TopicKey is not configured.");
-    return new EventGridPublisherClient(new Uri(endpoint), new Azure.AzureKeyCredential(key));
-});
-builder.Services.AddSingleton<IEventGridService, EventGridService>();
+    builder.Services.AddSingleton(new EventGridPublisherClient(
+        new Uri(egEndpoint), new Azure.AzureKeyCredential(egKey)));
+    builder.Services.AddSingleton<IEventGridService, EventGridService>();
+}
+else
+{
+    builder.Services.AddSingleton<IEventGridService, NoOpEventGridService>();
+}
+
+// Azure Service Bus
+var sbConnectionString = builder.Configuration["ServiceBus:ConnectionString"];
+if (!string.IsNullOrEmpty(sbConnectionString))
+{
+    builder.Services.AddSingleton(new ServiceBusClient(sbConnectionString));
+}
 
 // Application Insights Analytics Service
 // Uses a named HttpClient to query the App Insights REST API.
