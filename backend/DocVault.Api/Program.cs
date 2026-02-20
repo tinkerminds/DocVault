@@ -4,6 +4,7 @@ using Azure.Storage.Blobs;
 using Azure.Identity;
 using Microsoft.Identity.Web;
 using Azure.Messaging.EventGrid;
+using Azure.Messaging.ServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,15 @@ builder.Services.AddSingleton<EventGridPublisherClient>(sp =>
     return new EventGridPublisherClient(new Uri(endpoint), new Azure.AzureKeyCredential(key));
 });
 builder.Services.AddSingleton<IEventGridService, EventGridService>();
+
+// Azure Service Bus — queue messages for background processing
+builder.Services.AddSingleton<ServiceBusClient>(sp =>
+{
+    var connectionString = builder.Configuration["ServiceBus:ConnectionString"];
+    if (string.IsNullOrEmpty(connectionString))
+        throw new InvalidOperationException("ServiceBus connection string is not configured.");
+    return new ServiceBusClient(connectionString);
+});
 
 // Application Insights Analytics Service
 // Uses a named HttpClient to query the App Insights REST API.
