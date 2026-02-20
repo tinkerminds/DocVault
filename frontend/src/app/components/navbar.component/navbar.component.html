@@ -10,14 +10,10 @@
 
     <div class="navbar-content">
       <nav class="navbar-nav">
-        <a
-          routerLink="/"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="nav-link"
-          >Home</a
-        >
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-link">Home</a>
         <a routerLink="/documents" routerLinkActive="active" class="nav-link">Documents</a>
+        <a *ngIf="isAuthenticated" routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
         <button class="nav-link search-btn" [class.active]="isSearchOpen" (click)="toggleSearch()">
           Search
         </button>
@@ -56,14 +52,8 @@
     <div class="search-overlay-inner">
       <div class="search-input-wrapper">
         <span class="material-symbols-outlined search-icon">search</span>
-        <input
-          class="search-overlay-input"
-          type="text"
-          placeholder="Search documents..."
-          [(ngModel)]="searchQuery"
-          (input)="onSearchInput(searchQuery)"
-          autocomplete="off"
-        />
+        <input class="search-overlay-input" type="text" placeholder="Search documents..." [(ngModel)]="searchQuery"
+          (input)="onSearchInput(searchQuery)" autocomplete="off" />
         <button class="search-close-btn" (click)="closeSearch()">
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -76,40 +66,24 @@
           <span>Loading...</span>
         </div>
 
-        <div
-          *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && searchQuery.trim()"
-          class="search-state"
-        >
+        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && searchQuery.trim()" class="search-state">
           <span class="material-symbols-outlined">search_off</span>
           <span>No documents found for "{{ searchQuery }}"</span>
         </div>
 
-        <div
-          *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && !searchQuery.trim()"
-          class="search-state"
-        >
+        <div *ngIf="!isLoadingSearch && filteredDocuments.length === 0 && !searchQuery.trim()" class="search-state">
           <span class="material-symbols-outlined">folder_open</span>
           <span>No documents available</span>
         </div>
 
-        <div
-          *ngIf="!searchQuery.trim() && filteredDocuments.length > 0"
-          class="search-section-label"
-        >
+        <div *ngIf="!searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
           Recent Documents
         </div>
-        <div
-          *ngIf="searchQuery.trim() && filteredDocuments.length > 0"
-          class="search-section-label"
-        >
+        <div *ngIf="searchQuery.trim() && filteredDocuments.length > 0" class="search-section-label">
           Results for "{{ searchQuery }}"
         </div>
 
-        <button
-          *ngFor="let doc of filteredDocuments"
-          class="search-result-item"
-          (click)="navigateToDocument(doc)"
-        >
+        <button *ngFor="let doc of filteredDocuments" class="search-result-item" (click)="navigateToDocument(doc)">
           <div class="result-icon">
             <span class="material-symbols-outlined">{{ getFileIcon(doc.fileName) }}</span>
           </div>
