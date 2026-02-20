@@ -34,6 +34,7 @@
   .table-container {
     overflow-x: auto;
 
+    .sign-in-state,
     .loading-state,
     .empty-state {
       display: flex;

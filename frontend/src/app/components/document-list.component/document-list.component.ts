@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 import { DocumentService } from '../../services/document.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -27,20 +28,28 @@ export class DocumentListComponent implements OnInit, OnDestroy {
   @Input() limit: number = 3;
   documents: Document[] = [];
   isLoading = true;
+  isLoggedIn = false;
   private destroy$ = new Subject<void>();
 
   constructor(
     private documentService: DocumentService,
+    private authService: MsalService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.loadDocuments();
+    this.isLoggedIn = this.authService.instance.getAllAccounts().length > 0;
 
-    // Refresh when a new document is uploaded
-    this.documentService.documentUploaded$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+    if (this.isLoggedIn) {
       this.loadDocuments();
-    });
+
+      // Refresh when a new document is uploaded
+      this.documentService.documentUploaded$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.loadDocuments();
+      });
+    } else {
+      this.isLoading = false;
+    }
   }
 
   ngOnDestroy(): void {
