@@ -133,9 +133,12 @@ jobs:
       - name: Publish Functions
         run: dotnet publish -c Release -o ./publish
         working-directory: functions/DocVault.Functions
-      - name: Deploy to Azure Function App
-        uses: azure/webapps-deploy@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          app-name: docvault-func-dev
-          package: functions/DocVault.Functions/publish
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure Function App
+        run: |
+          cd functions/DocVault.Functions/publish
+          zip -r ../func-deploy.zip .
+          az functionapp deploy --name docvault-func-dev --resource-group docvault-rg --src-path ../func-deploy.zip --type zip
