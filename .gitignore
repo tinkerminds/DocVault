@@ -66,5 +66,7 @@ coverage/
 .nyc_output/
 azurite-data/
 publish/
+deploy-*.zip
+*.zip
 
 DocVault.sln

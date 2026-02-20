@@ -66,6 +66,9 @@ builder.Services.AddSingleton<BlobServiceClient>(sp =>
 });
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
+// Azure Event Grid — publish document events
+builder.Services.AddSingleton<IEventGridService, EventGridService>();
+
 // ---------- App Pipeline ----------
 
 var app = builder.Build();
