@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -32,7 +32,8 @@ export class UploadPageComponent {
   constructor(
     private fb: FormBuilder,
     private documentService: DocumentService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.fileForm = this.fb.group({
       tags: [''],
@@ -105,6 +106,7 @@ export class UploadPageComponent {
             description,
             (percent: number) => {
               fileWrapper.progress = percent;
+              this.cdr.detectChanges();
             }
           ).subscribe({
               next: (response) => {

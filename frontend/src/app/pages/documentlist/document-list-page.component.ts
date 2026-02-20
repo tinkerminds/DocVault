@@ -307,7 +307,24 @@ export class DocumentListPageComponent implements OnInit, OnDestroy {
 
   downloadDocument(doc: DocumentUI): void {
     if (doc.downloadUrl) {
-      window.open(doc.downloadUrl, '_blank');
+      // Fetch the file and trigger a real browser download
+      fetch(doc.downloadUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = doc.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+          console.error('Download failed:', err);
+          // Fallback to opening in new tab
+          window.open(doc.downloadUrl!, '_blank');
+        });
     } else {
       console.error('Download URL not available for:', doc.name);
     }
